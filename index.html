@@ -1,0 +1,4499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLC Media Player — Redesigned</title>
+<meta name="description" content="A modern, Apple-inspired redesign of VLC Media Player with full playback features.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   APPLE DESIGN SYSTEM TOKENS
+   ============================================ */
+:root {
+  /* Primary */
+  --black: #000000;
+  --pale-gray: #f5f5f7;
+  --ink: #1d1d1f;
+
+  /* Accent */
+  --blue: #0071e3;
+  --blue-hover: #0077ED;
+  --blue-link: #0066cc;
+  --blue-bright: #2997ff;
+
+  /* Surfaces */
+  --white: #ffffff;
+  --graphite-a: #272729;
+  --graphite-b: #262629;
+  --graphite-c: #28282b;
+  --graphite-d: #2a2a2c;
+  --graphite-hover: #323235;
+
+  /* Neutrals */
+  --gray-secondary: #6e6e73;
+  --border-soft: #d2d2d7;
+  --border-mid: #86868b;
+  --utility-dark: #424245;
+
+  /* Semantic */
+  --red: #ff453a;
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --yellow: #ffd60a;
+
+  /* Typography */
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-text: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+
+  /* Radii */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 18px;
+  --radius-2xl: 28px;
+  --radius-pill: 980px;
+  --radius-circle: 50%;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-controls: 10;
+  --z-sidebar: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-dropdown: 50;
+  --z-toast: 60;
+  --z-top: 100;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.47;
+  color: var(--pale-gray);
+  background: var(--black);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+input, select, button, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+button { cursor: pointer; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--utility-dark); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-secondary); }
+
+/* ============================================
+   APP SHELL
+   ============================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ============================================
+   TOP NAV BAR
+   ============================================ */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  min-height: 36px;
+  background: rgba(39, 39, 41, 0.88);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  padding: 0 var(--space-16);
+  z-index: var(--z-overlay);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  gap: var(--space-2);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-right: var(--space-16);
+  padding-right: var(--space-16);
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+.nav-brand svg { width: 22px; height: 22px; fill: var(--orange); }
+.nav-brand-text {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--pale-gray);
+}
+
+.nav-menu { display: flex; align-items: center; gap: 0; flex: 1; }
+
+.nav-menu-item {
+  position: relative;
+  padding: var(--space-6) var(--space-10);
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(245,245,247,0.82);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), visibility var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+}
+
+.nav-menu-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+}
+
+.nav-menu-item.active {
+  background: rgba(0,113,227,0.2);
+  color: var(--blue-bright);
+}
+
+/* Dropdown menus */
+.dropdown {
+  will-change: transform, opacity;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: #2a2a2c;
+  -webkit-
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px) scale(0.98);
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.05);
+}
+
+.nav-menu-item:hover > .dropdown,
+.dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6) var(--space-10);
+  font-size: 13px;
+  color: rgba(245,245,247,0.9);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.dropdown-item .shortcut {
+  font-size: 11px;
+  color: var(--gray-secondary);
+  margin-left: var(--space-16);
+}
+
+.dropdown-item:hover .shortcut { color: rgba(255,255,255,0.6); }
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: var(--space-4) var(--space-10);
+}
+
+/* Nav right section */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: rgba(245,245,247,0.7);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.nav-icon-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+}
+
+.nav-icon-btn.active { color: var(--blue-bright); }
+
+.nav-icon-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ============================================
+   VIDEO VIEWPORT
+   ============================================ */
+.viewport {
+  flex: 1;
+  position: relative;
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: default;
+}
+
+.viewport video {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.viewport audio { display: none; }
+
+/* Drop zone */
+.drop-zone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-base);
+  transition: background-color var(--duration-normal), color var(--duration-normal), border-color var(--duration-normal), opacity var(--duration-normal), transform var(--duration-normal), visibility var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+.drop-zone.has-media { pointer-events: none; opacity: 0; }
+
+.drop-zone-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-2xl);
+  background: rgba(255,255,255,0.04);
+  border: 2px dashed rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-20);
+  transition: background-color var(--duration-normal), color var(--duration-normal), border-color var(--duration-normal), opacity var(--duration-normal), transform var(--duration-normal), visibility var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+.drop-zone-icon svg {
+  width: 32px;
+  height: 32px;
+  fill: var(--gray-secondary);
+  transition: fill var(--duration-normal);
+}
+
+.drop-zone-title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--pale-gray);
+  margin-bottom: var(--space-8);
+  letter-spacing: -0.2px;
+}
+
+.drop-zone-subtitle {
+  font-size: 14px;
+  color: var(--gray-secondary);
+  margin-bottom: var(--space-24);
+}
+
+.drop-zone-btn {
+  padding: var(--space-8) var(--space-20);
+  background: var(--blue);
+  color: var(--white);
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  letter-spacing: -0.1px;
+}
+
+.drop-zone-btn:hover {
+  background: var(--blue-hover);
+  transform: scale(1.02);
+}
+
+.drop-zone-btn:active { transform: scale(0.98); }
+
+/* Drag overlay */
+.drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 113, 227, 0.08);
+  border: 2px dashed var(--blue);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal), color var(--duration-normal), border-color var(--duration-normal), opacity var(--duration-normal), transform var(--duration-normal), visibility var(--duration-normal), box-shadow var(--duration-normal);
+  margin: var(--space-12);
+  backdrop-filter: blur(8px);
+}
+
+.drag-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drag-overlay-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--blue-bright);
+}
+
+/* OSD (On-Screen Display) */
+.osd {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(0,0,0,0.85);
+  border-radius: var(--radius-xl);
+  padding: var(--space-16) var(--space-24);
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  pointer-events: none;
+  z-index: var(--z-overlay);
+}
+
+.osd.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.osd-icon svg { width: 28px; height: 28px; fill: var(--white); }
+.osd-text { font-size: 17px; font-weight: 600; color: var(--white); }
+
+/* ============================================
+   TRANSPORT CONTROLS BAR
+   ============================================ */
+.controls-bar {
+  background: rgba(30, 30, 32, 0.95);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 0;
+  z-index: var(--z-controls);
+  flex-shrink: 0;
+}
+
+/* Seek bar */
+.seek-container {
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-16);
+  cursor: pointer;
+}
+
+.seek-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  overflow: visible;
+  transition: height var(--duration-fast);
+}
+
+.seek-container:hover .seek-track { height: 5px; }
+
+.seek-buffer {
+  position: absolute;
+  height: 100%;
+  background: rgba(255,255,255,0.18);
+  border-radius: 2px;
+  left: 0;
+  top: 0;
+  transition: width var(--duration-fast);
+}
+
+.seek-progress {
+  position: absolute;
+  height: 100%;
+  background: var(--blue);
+  border-radius: 2px;
+  left: 0;
+  top: 0;
+  transition: width 80ms linear;
+}
+
+.seek-thumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--white);
+  border-radius: var(--radius-circle);
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform var(--duration-fast);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  z-index: 2;
+}
+
+.seek-container:hover .seek-thumb { transform: translate(-50%, -50%) scale(1); }
+
+.seek-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 500;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  pointer-events: none;
+}
+
+.seek-container:hover .seek-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* A-B repeat markers */
+.ab-marker {
+  position: absolute;
+  width: 3px;
+  height: 14px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 1.5px;
+  z-index: 3;
+}
+
+.ab-marker.a-marker { background: var(--green); }
+.ab-marker.b-marker { background: var(--red); }
+
+.ab-region {
+  position: absolute;
+  height: 100%;
+  background: rgba(48, 209, 88, 0.15);
+  top: 0;
+  z-index: 1;
+}
+
+/* Controls row */
+.controls-row {
+  display: flex;
+  align-items: center;
+  padding: var(--space-6) var(--space-16) var(--space-10);
+  gap: var(--space-8);
+}
+
+.controls-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.controls-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin: 0 auto;
+}
+
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Transport buttons */
+.ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-circle);
+  color: rgba(245,245,247,0.85);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  position: relative;
+}
+
+.ctrl-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--white);
+}
+
+.ctrl-btn:active { transform: scale(0.92); }
+
+.ctrl-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+.ctrl-btn.active { color: var(--blue-bright); }
+
+.ctrl-btn.play-btn {
+  width: 42px;
+  height: 42px;
+  background: var(--blue);
+  color: var(--white);
+}
+
+.ctrl-btn.play-btn:hover { background: var(--blue-hover); }
+
+.ctrl-btn.play-btn svg { width: 20px; height: 20px; }
+
+.ctrl-btn.record-btn.active { color: var(--red); }
+
+/* Volume control */
+.volume-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.volume-slider-container {
+  width: 80px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--white);
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--white);
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Time display */
+.time-display {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  min-width: 95px;
+  text-align: center;
+}
+
+/* Speed control */
+.speed-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(245,245,247,0.7);
+  padding: var(--space-2) var(--space-8);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  min-width: 38px;
+  text-align: center;
+}
+
+.speed-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+}
+
+/* ============================================
+   PLAYLIST SIDEBAR
+   ============================================ */
+.playlist-panel {
+  will-change: transform, opacity;
+  width: 320px;
+  min-width: 320px;
+  background: rgba(30, 30, 32, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-sidebar);
+  transform: translateX(100%);
+  transition: transform var(--duration-slow) var(--ease-out);
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.playlist-panel.open { transform: translateX(0); }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-14) var(--space-16);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  min-height: 48px;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pale-gray);
+  letter-spacing: -0.15px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.panel-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--gray-secondary);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.panel-action-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+}
+
+.panel-action-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Playlist search */
+.playlist-search {
+  padding: var(--space-8) var(--space-12);
+}
+
+.playlist-search input {
+  width: 100%;
+  height: 32px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-10);
+  font-size: 13px;
+  color: var(--pale-gray);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.playlist-search input::placeholder { color: var(--gray-secondary); }
+.playlist-search input:focus {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+}
+
+/* Playlist items */
+.playlist-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: var(--space-8) var(--space-10);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  position: relative;
+}
+
+.playlist-item:hover { background: rgba(255,255,255,0.06); }
+
+.playlist-item.active {
+  background: rgba(0,113,227,0.15);
+}
+
+.playlist-item.playing::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  background: var(--blue);
+  border-radius: 2px;
+}
+
+.playlist-item-num {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.playlist-item.playing .playlist-item-num { color: var(--blue-bright); }
+
+.playlist-item-info { flex: 1; min-width: 0; }
+
+.playlist-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pale-gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-item.playing .playlist-item-title { color: var(--blue-bright); }
+
+.playlist-item-meta {
+  font-size: 11px;
+  color: var(--gray-secondary);
+  margin-top: 1px;
+}
+
+.playlist-item-duration {
+  font-size: 12px;
+  color: var(--gray-secondary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.playlist-item-remove {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--gray-secondary);
+  opacity: 0;
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  flex-shrink: 0;
+}
+
+.playlist-item:hover .playlist-item-remove { opacity: 1; }
+.playlist-item-remove:hover { color: var(--red); background: rgba(255,69,58,0.1); }
+.playlist-item-remove svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* Playlist footer */
+.playlist-footer {
+  padding: var(--space-10) var(--space-12);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.playlist-count {
+  font-size: 12px;
+  color: var(--gray-secondary);
+}
+
+.playlist-add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-12);
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pale-gray);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.playlist-add-btn:hover { background: rgba(255,255,255,0.1); }
+.playlist-add-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+/* ============================================
+   EQUALIZER PANEL
+   ============================================ */
+.eq-panel {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  width: 420px;
+  background: rgba(30, 30, 32, 0.96);
+  backdrop-filter: blur(14px) saturate(200%);
+  -webkit-backdrop-filter: blur(14px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-xl);
+  z-index: var(--z-overlay);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.97);
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.eq-panel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.eq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-14) var(--space-16);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.eq-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.eq-toggle {
+  width: 36px;
+  height: 20px;
+  background: var(--utility-dark);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.eq-toggle.active { background: var(--blue); }
+
+.eq-toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--white);
+  border-radius: var(--radius-circle);
+  top: 2px;
+  left: 2px;
+  transition: transform var(--duration-fast);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.eq-toggle.active::after { transform: translateX(16px); }
+
+.eq-preset-select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-10);
+  font-size: 13px;
+  color: var(--pale-gray);
+  cursor: pointer;
+}
+
+.eq-preset-select option { background: var(--graphite-a); color: var(--pale-gray); }
+
+.eq-body { padding: var(--space-14) var(--space-16) var(--space-16); }
+
+/* Preamp */
+.eq-preamp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin-bottom: var(--space-16);
+  padding-bottom: var(--space-14);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.eq-preamp-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.eq-preamp input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+}
+
+.eq-preamp input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--white);
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.eq-preamp-val {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+  width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* EQ Bands */
+.eq-bands {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.eq-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  flex: 1;
+}
+
+.eq-band-slider {
+  position: relative;
+  width: 24px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eq-band-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  outline: none;
+}
+
+.eq-band-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--blue);
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.eq-band-label {
+  font-size: 10px;
+  color: var(--gray-secondary);
+  font-weight: 500;
+}
+
+.eq-band-val {
+  font-size: 10px;
+  color: var(--gray-secondary);
+  font-variant-numeric: tabular-nums;
+  min-height: 14px;
+}
+
+/* ============================================
+   VIDEO FILTERS PANEL
+   ============================================ */
+.filters-panel {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  width: 300px;
+  background: rgba(30, 30, 32, 0.96);
+  backdrop-filter: blur(14px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-xl);
+  z-index: var(--z-overlay);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.97);
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.filters-panel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: var(--space-10) var(--space-16);
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.filter-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+}
+
+.filter-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--white);
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.filter-val {
+  font-size: 12px;
+  color: var(--gray-secondary);
+  width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-reset {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-10) var(--space-16) var(--space-14);
+}
+
+.filter-reset-btn {
+  padding: var(--space-6) var(--space-16);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+  background: rgba(255,255,255,0.06);
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.filter-reset-btn:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+
+/* ============================================
+   MEDIA INFO PANEL
+   ============================================ */
+.info-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 440px;
+  max-height: 80vh;
+  background: rgba(30, 30, 32, 0.97);
+  backdrop-filter: blur(14px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-xl);
+  z-index: var(--z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.info-panel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-8) var(--space-16);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.info-label {
+  font-size: 13px;
+  color: var(--gray-secondary);
+  flex-shrink: 0;
+  margin-right: var(--space-16);
+}
+
+.info-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pale-gray);
+  text-align: right;
+  word-break: break-all;
+}
+
+/* ============================================
+   CONTEXT MENU
+   ============================================ */
+.context-menu {
+  position: fixed;
+  min-width: 200px;
+  background: #2a2a2c;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  z-index: var(--z-top);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95);
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), visibility var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+
+.context-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+/* ============================================
+   SPEED POPUP
+   ============================================ */
+.speed-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  background: #2a2a2c;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px) scale(0.97);
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), visibility var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  min-width: 100px;
+}
+
+.speed-popup.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.speed-option {
+  padding: var(--space-6) var(--space-12);
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  color: rgba(245,245,247,0.9);
+  transition: background var(--duration-fast);
+  text-align: center;
+  cursor: pointer;
+}
+
+.speed-option:hover { background: var(--blue); color: var(--white); }
+.speed-option.active { color: var(--blue-bright); font-weight: 600; }
+
+/* ============================================
+   ASPECT RATIO POPUP
+   ============================================ */
+.aspect-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  background: #2a2a2c;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px) scale(0.97);
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), visibility var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  min-width: 120px;
+}
+
+.aspect-popup.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Audio track popup */
+.audio-track-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  background: #2a2a2c;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px) scale(0.97);
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), visibility var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  min-width: 200px;
+  right: 0;
+}
+
+.audio-track-popup.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.audio-track-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  color: rgba(245,245,247,0.9);
+  transition: background var(--duration-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.audio-track-option:hover { background: var(--blue); color: var(--white); }
+.audio-track-option.active { color: var(--blue-bright); font-weight: 600; }
+
+.audio-track-option .track-check {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.audio-track-option .track-check svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--blue-bright);
+  opacity: 0;
+}
+
+.audio-track-option.active .track-check svg { opacity: 1; }
+
+.audio-track-empty {
+  padding: var(--space-10) var(--space-12);
+  font-size: 13px;
+  color: var(--gray-secondary);
+  text-align: center;
+}
+
+/* ============================================
+   TOAST / NOTIFICATION
+   ============================================ */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #2a2a2c;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-pill);
+  padding: var(--space-8) var(--space-20);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pale-gray);
+  z-index: var(--z-toast);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================
+   MODAL OVERLAY
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal), color var(--duration-normal), border-color var(--duration-normal), opacity var(--duration-normal), transform var(--duration-normal), visibility var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   KEYBOARD SHORTCUTS MODAL
+   ============================================ */
+.shortcuts-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 560px;
+  max-height: 80vh;
+  background: rgba(30, 30, 32, 0.97);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-xl);
+  z-index: var(--z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.shortcuts-modal.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.shortcuts-body {
+  padding: 0 var(--space-16) var(--space-16);
+  overflow-y: auto;
+  max-height: calc(80vh - 60px);
+}
+
+.shortcuts-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--space-14) 0 var(--space-8);
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6) 0;
+}
+
+.shortcut-action { font-size: 13px; color: var(--pale-gray); }
+
+.shortcut-keys {
+  display: flex;
+  gap: var(--space-4);
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 var(--space-6);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-text);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-secondary);
+}
+
+/* ============================================
+   SUBTITLE DISPLAY
+   ============================================ */
+.subtitle-display {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 80%;
+  text-align: center;
+  pointer-events: none;
+  z-index: var(--z-controls);
+}
+
+.subtitle-text {
+  display: inline-block;
+  background: rgba(0,0,0,0.75);
+  color: var(--white);
+  font-size: 18px;
+  font-weight: 500;
+  padding: var(--space-6) var(--space-14);
+  border-radius: var(--radius-md);
+  line-height: 1.4;
+  letter-spacing: -0.1px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .playlist-panel {
+  will-change: transform, opacity; width: 100%; min-width: 100%; }
+  .eq-panel { width: calc(100% - 40px); right: 20px; left: 20px; }
+  .filters-panel { width: calc(100% - 40px); left: 20px; right: 20px; }
+  .nav-menu-item { padding: var(--space-4) var(--space-6); font-size: 12px; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes pulse-record {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ctrl-btn.record-btn.active svg { animation: pulse-record 1.2s ease-in-out infinite; }
+
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.playing-indicator {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 12px;
+}
+
+.playing-indicator span {
+  width: 2px;
+  background: var(--blue-bright);
+  border-radius: 1px;
+  animation: eq-bounce 0.8s ease-in-out infinite;
+}
+
+.playing-indicator span:nth-child(1) { height: 8px; animation-delay: 0s; }
+.playing-indicator span:nth-child(2) { height: 12px; animation-delay: 0.15s; }
+.playing-indicator span:nth-child(3) { height: 6px; animation-delay: 0.3s; }
+.playing-indicator span:nth-child(4) { height: 10px; animation-delay: 0.45s; }
+
+/* Fullscreen styles */
+.app-fullscreen .nav-bar { display: none; }
+.app-fullscreen .playlist-panel {
+  will-change: transform, opacity; display: none; }
+.app-fullscreen .controls-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  transition: opacity var(--duration-normal);
+}
+.app-fullscreen:not(.mouse-idle) .controls-bar,
+.app-fullscreen .controls-bar:hover { opacity: 1; }
+.app-fullscreen.mouse-idle .viewport,
+.app-fullscreen.mouse-idle .controls-bar { cursor: none; }
+.app-fullscreen .viewport { height: 100vh; }
+
+/* Watch Together Styles */
+.watch-panel {
+  will-change: transform, opacity;
+  width: 360px;
+  min-width: 360px;
+  background: rgba(30, 30, 32, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-sidebar);
+  transform: translateX(100%);
+  transition: transform var(--duration-slow) var(--ease-out);
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+.watch-panel.open { transform: translateX(0); }
+.app-fullscreen.watch-panel-open .watch-panel.open {
+  position: relative;
+  width: 360px;
+  min-width: 360px;
+}
+.app-fullscreen.watch-panel-open .viewport {
+  width: calc(100vw - 360px);
+  flex: none;
+}
+.app-fullscreen.watch-panel-open .controls-bar {
+  right: 360px;
+}
+
+/* Friend Disconnect Overlay */
+.friend-disconnect-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-slow) var(--ease-out), color var(--duration-slow) var(--ease-out), border-color var(--duration-slow) var(--ease-out), opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out), visibility var(--duration-slow) var(--ease-out), box-shadow var(--duration-slow) var(--ease-out);
+}
+
+.friend-disconnect-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.friend-disconnect-card {
+  text-align: center;
+  max-width: 380px;
+  padding: 48px 40px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: blur(14px);
+  animation: disconnectCardIn 0.5s var(--ease-out) forwards;
+}
+
+@keyframes disconnectCardIn {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.friend-disconnect-emoji {
+  font-size: 56px;
+  margin-bottom: 20px;
+  animation: waveHand 1.5s ease-in-out infinite;
+}
+
+@keyframes waveHand {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  50% { transform: rotate(-10deg); }
+  75% { transform: rotate(15deg); }
+}
+
+.friend-disconnect-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+
+.friend-disconnect-name {
+  color: var(--blue-bright);
+}
+
+.friend-disconnect-subtitle {
+  font-size: 14px;
+  color: var(--gray-secondary);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.friend-disconnect-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friend-disconnect-actions .watch-btn {
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.friend-disconnect-actions .watch-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.friend-disconnect-actions .watch-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.watch-status {
+  padding: var(--space-8) var(--space-16);
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.2);
+}
+.watch-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  background: var(--red);
+}
+.watch-status-dot.connected { background: var(--green); }
+.watch-status-dot.connecting { background: var(--orange); }
+
+.watch-room-section {
+  padding: var(--space-16);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+.watch-room-code {
+  font-family: monospace;
+  font-size: 18px;
+  letter-spacing: 2px;
+  background: rgba(255,255,255,0.08);
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-md);
+  text-align: center;
+  user-select: all;
+  cursor: pointer;
+}
+.watch-room-input {
+  width: 100%;
+  height: 36px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-10);
+  color: var(--white);
+  text-align: center;
+  font-size: 14px;
+}
+.watch-room-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+}
+
+.watch-btn {
+  width: 100%;
+  padding: var(--space-8);
+  border-radius: var(--radius-md);
+  background: var(--blue);
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+}
+.watch-btn:hover { background: var(--blue-hover); }
+.watch-btn.secondary {
+  background: rgba(255,255,255,0.1);
+}
+.watch-btn.secondary:hover { background: rgba(255,255,255,0.15); }
+
+.watch-peers {
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  min-height: 56px;
+}
+.peer-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white);
+  position: relative;
+}
+.peer-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: var(--green);
+  border-radius: var(--radius-circle);
+  border: 2px solid var(--graphite-a);
+}
+
+.watch-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.watch-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+.watch-chat-bubble {
+  max-width: 85%;
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.4;
+  position: relative;
+}
+.watch-chat-bubble .sender {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+  display: block;
+}
+.watch-chat-bubble.self {
+  align-self: flex-end;
+  background: var(--blue);
+  color: var(--white);
+  border-bottom-right-radius: 4px;
+}
+.watch-chat-bubble.other {
+  align-self: flex-start;
+  background: var(--graphite-c);
+  color: var(--pale-gray);
+  border-bottom-left-radius: 4px;
+}
+.watch-chat-bubble.system {
+  align-self: center;
+  background: transparent;
+  color: var(--gray-secondary);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+}
+
+.watch-emoji-bar {
+  display: flex;
+  padding: 8px 12px 4px 12px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  gap: 2px;
+  justify-content: space-between;
+}
+.emoji-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: transform 0.1s, background 0.1s;
+  opacity: 0.85;
+}
+.emoji-btn:hover:not(:disabled) {
+  transform: scale(1.2);
+  background: rgba(255,255,255,0.1);
+  opacity: 1;
+}
+.emoji-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+
+
+.watch-chat-input-bar {
+  padding: 4px var(--space-12) var(--space-12);
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  gap: var(--space-8);
+}
+.watch-chat-input {
+  flex: 1;
+  height: 36px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-16);
+  color: var(--white);
+  font-size: 13px;
+}
+.watch-chat-input:focus {
+  border-color: var(--blue);
+  background: rgba(255,255,255,0.08);
+}
+.watch-chat-send {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-circle);
+  background: var(--blue);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast), visibility var(--duration-fast), box-shadow var(--duration-fast);
+}
+.watch-chat-send:hover:not(:disabled) { background: var(--blue-hover); transform: scale(1.05); }
+.watch-chat-send:active:not(:disabled) { transform: scale(0.95); }
+.watch-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.watch-chat-send svg { width: 16px; height: 16px; fill: currentColor; }
+
+
+/* Username Modal */
+.username-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  background: rgba(42, 42, 44, 0.98);
+  backdrop-filter: blur(14px) saturate(200%);
+  -webkit-backdrop-filter: blur(14px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-24);
+  width: 320px;
+  z-index: calc(var(--z-modal) + 1);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+}
+.username-modal.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+.username-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: var(--space-8);
+  text-align: center;
+}
+.username-modal-desc {
+  font-size: 13px;
+  color: var(--gray-secondary);
+  margin-bottom: var(--space-20);
+  text-align: center;
+}
+.username-modal-input {
+  width: 100%;
+  height: 40px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-12);
+  color: var(--white);
+  font-size: 15px;
+  margin-bottom: var(--space-20);
+  text-align: center;
+}
+.username-modal-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+}
+
+@media (max-width: 768px) {
+  .watch-panel {
+  will-change: transform, opacity; width: 100%; min-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- TOP NAVIGATION BAR -->
+  <nav class="nav-bar">
+    <div class="nav-brand">
+      <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM8 15l3.5-4.5L15 14.5l2-2.5 3 4H4z"/><polygon points="9.5,7.5 8,10 11,10"/><path d="M8 15V8l7 3.5z" fill="currentColor"/></svg>
+      <span class="nav-brand-text">VLC</span>
+    </div>
+
+    <div class="nav-menu">
+      <!-- Media Menu -->
+      <button class="nav-menu-item" data-menu="media">
+        Media
+        <div class="dropdown" id="menu-media">
+          <div class="dropdown-item" onclick="openFile()">Open File<span class="shortcut">Ctrl+O</span></div>
+          <div class="dropdown-item" onclick="openMultipleFiles()">Open Multiple Files<span class="shortcut">Ctrl+Shift+O</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="openSubtitleFile()">Open Subtitle File</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" id="menu-info-btn" onclick="toggleInfoPanel()">Media Information<span class="shortcut">Ctrl+I</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="closeApp()">Quit<span class="shortcut">Ctrl+Q</span></div>
+        </div>
+      </button>
+
+      <!-- Playback Menu -->
+      <button class="nav-menu-item" data-menu="playback">
+        Playback
+        <div class="dropdown" id="menu-playback">
+          <div class="dropdown-item" onclick="togglePlayPause()">Play / Pause<span class="shortcut">Space</span></div>
+          <div class="dropdown-item" onclick="stopPlayback()">Stop<span class="shortcut">S</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="playPrev()">Previous<span class="shortcut">P</span></div>
+          <div class="dropdown-item" onclick="playNext()">Next<span class="shortcut">N</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="seekRelative(-30)">Jump Backward<span class="shortcut">Ctrl+←</span></div>
+          <div class="dropdown-item" onclick="seekRelative(30)">Jump Forward<span class="shortcut">Ctrl+→</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="cycleSpeed(1)">Speed Up<span class="shortcut">+</span></div>
+          <div class="dropdown-item" onclick="cycleSpeed(-1)">Speed Down<span class="shortcut">-</span></div>
+          <div class="dropdown-item" onclick="setSpeed(1)">Normal Speed<span class="shortcut">=</span></div>
+        </div>
+      </button>
+
+      <!-- Audio Menu -->
+      <button class="nav-menu-item" data-menu="audio">
+        Audio
+        <div class="dropdown" id="menu-audio">
+          <div class="dropdown-item" onclick="toggleMute()">Mute<span class="shortcut">M</span></div>
+          <div class="dropdown-item" onclick="adjustVolume(0.05)">Volume Up<span class="shortcut">↑</span></div>
+          <div class="dropdown-item" onclick="adjustVolume(-0.05)">Volume Down<span class="shortcut">↓</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="toggleAudioTrackPopup()">Audio Track<span class="shortcut">B</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="toggleEqualizer()">Equalizer<span class="shortcut">E</span></div>
+        </div>
+      </button>
+
+      <!-- Video Menu -->
+      <button class="nav-menu-item" data-menu="video">
+        Video
+        <div class="dropdown" id="menu-video">
+          <div class="dropdown-item" onclick="toggleFullscreen()">Fullscreen<span class="shortcut">F</span></div>
+          <div class="dropdown-item" onclick="togglePiP()">Picture in Picture</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="toggleFilters()">Video Effects</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="setAspect('contain')">Fit to Window</div>
+          <div class="dropdown-item" onclick="setAspect('cover')">Fill Window</div>
+          <div class="dropdown-item" onclick="setAspect('16/9')">16:9</div>
+          <div class="dropdown-item" onclick="setAspect('4/3')">4:3</div>
+          <div class="dropdown-item" onclick="setAspect('1/1')">1:1</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="takeScreenshot()">Take Screenshot<span class="shortcut">Shift+S</span></div>
+        </div>
+      </button>
+
+
+
+      <!-- Watch Together Menu -->
+      <button class="nav-menu-item" data-menu="watch">
+        Watch Together
+        <div class="dropdown" id="menu-watch">
+          <div class="dropdown-item" onclick="toggleWatchPanel()">Watch Together Panel<span class="shortcut">W</span></div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="createWatchRoom()">Create Room</div>
+          <div class="dropdown-item" onclick="promptJoinRoom()">Join Room</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="disconnectWatch()">Disconnect</div>
+        </div>
+      </button>
+
+      <!-- Help Menu -->
+      <button class="nav-menu-item" data-menu="help">
+        Help
+        <div class="dropdown" id="menu-help">
+          <div class="dropdown-item" onclick="toggleShortcutsModal()">Keyboard Shortcuts<span class="shortcut">?</span></div>
+          <div class="dropdown-item" onclick="showToast('VLC Web — Apple Design Redesign v1.0')">About</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="nav-right">
+      <button class="nav-icon-btn" id="nav-pip-btn" title="Picture in Picture" onclick="togglePiP()">
+        <svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>
+      </button>
+      <button class="nav-icon-btn" id="nav-eq-btn" title="Equalizer" onclick="toggleEqualizer()">
+        <svg viewBox="0 0 24 24"><path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 9v11h4V9h-4z"/></svg>
+      </button>
+      <button class="nav-icon-btn" id="nav-watch-btn" title="Watch Together" onclick="toggleWatchPanel()">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </button>
+      <button class="nav-icon-btn" id="nav-playlist-btn" title="Playlist" onclick="togglePlaylist()">
+        <svg viewBox="0 0 24 24"><path d="M4 10h12v2H4zm0-4h12v2H4zm0 8h8v2H4zm10 0v6l5-3z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    
+    <!-- Friend Disconnect Overlay -->
+    <div class="friend-disconnect-overlay" id="friend-disconnect-overlay">
+      <div class="friend-disconnect-card">
+        <div class="friend-disconnect-emoji">👋</div>
+        <div class="friend-disconnect-title"><span id="disconnect-friend-name">Your friend</span> left the room</div>
+        <div class="friend-disconnect-subtitle">Video has been paused. You can continue watching alone or wait for them to rejoin.</div>
+        <div class="friend-disconnect-actions">
+          <button class="watch-btn" onclick="continueWatchingAlone()">Continue Watching</button>
+          <button class="watch-btn secondary" onclick="waitForFriend()">Wait for them</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEO VIEWPORT -->
+    <div class="viewport" id="viewport" ondblclick="toggleFullscreen()">
+      <video id="video-player" crossorigin="anonymous"></video>
+
+      <!-- Drop zone (shown when no media) -->
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-zone-icon">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div class="drop-zone-title">Drop media files here</div>
+        <div class="drop-zone-subtitle">or click the button below to browse</div>
+        <button class="drop-zone-btn" onclick="openFile()">Open File</button>
+      </div>
+
+      <!-- Drag overlay -->
+      <div class="drag-overlay" id="drag-overlay">
+        <div class="drag-overlay-text">Drop to play</div>
+      </div>
+
+      <!-- OSD -->
+      <div class="osd" id="osd">
+        <div class="osd-icon" id="osd-icon"></div>
+        <div class="osd-text" id="osd-text"></div>
+      </div>
+
+      <!-- Subtitle display -->
+      <div class="subtitle-display" id="subtitle-display">
+        <span class="subtitle-text" id="subtitle-text"></span>
+      </div>
+
+      <!-- Filters panel -->
+      <div class="filters-panel" id="filters-panel">
+        <div class="panel-header">
+          <span class="panel-title">Video Effects</span>
+          <button class="panel-action-btn" onclick="toggleFilters()">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Brightness</span>
+          <input type="range" class="filter-slider" id="filter-brightness" min="0" max="200" value="100" oninput="updateFilters()">
+          <span class="filter-val" id="val-brightness">100%</span>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Contrast</span>
+          <input type="range" class="filter-slider" id="filter-contrast" min="0" max="200" value="100" oninput="updateFilters()">
+          <span class="filter-val" id="val-contrast">100%</span>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Saturation</span>
+          <input type="range" class="filter-slider" id="filter-saturation" min="0" max="200" value="100" oninput="updateFilters()">
+          <span class="filter-val" id="val-saturation">100%</span>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Hue</span>
+          <input type="range" class="filter-slider" id="filter-hue" min="0" max="360" value="0" oninput="updateFilters()">
+          <span class="filter-val" id="val-hue">0°</span>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Blur</span>
+          <input type="range" class="filter-slider" id="filter-blur" min="0" max="20" value="0" step="0.5" oninput="updateFilters()">
+          <span class="filter-val" id="val-blur">0px</span>
+        </div>
+        <div class="filter-reset">
+          <button class="filter-reset-btn" onclick="resetFilters()">Reset All</button>
+        </div>
+      </div>
+
+      <!-- Equalizer panel -->
+      <div class="eq-panel" id="eq-panel">
+        <div class="eq-header">
+          <div class="eq-toggle-group">
+            <span class="panel-title">Equalizer</span>
+            <div class="eq-toggle" id="eq-toggle" onclick="toggleEqEnabled()"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <select class="eq-preset-select" id="eq-preset" onchange="loadEqPreset()">
+              <option value="flat">Flat</option>
+              <option value="rock">Rock</option>
+              <option value="pop">Pop</option>
+              <option value="jazz">Jazz</option>
+              <option value="classical">Classical</option>
+              <option value="bass">Bass Boost</option>
+              <option value="treble">Treble Boost</option>
+              <option value="vocal">Vocal</option>
+              <option value="loudness">Loudness</option>
+            </select>
+            <button class="panel-action-btn" onclick="toggleEqualizer()">
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="eq-body">
+          <div class="eq-preamp">
+            <span class="eq-preamp-label">Preamp</span>
+            <input type="range" id="eq-preamp" min="-12" max="12" value="0" step="0.5" oninput="updatePreamp()">
+            <span class="eq-preamp-val" id="eq-preamp-val">0 dB</span>
+          </div>
+          <div class="eq-bands" id="eq-bands"></div>
+        </div>
+      </div>
+
+      <!-- Media Info panel -->
+      <div class="info-panel" id="info-panel">
+        <div class="panel-header">
+          <span class="panel-title">Media Information</span>
+          <button class="panel-action-btn" onclick="toggleInfoPanel()">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+        <div id="info-body" style="padding-bottom:12px;"></div>
+      </div>
+    </div>
+
+    <!-- PLAYLIST SIDEBAR -->
+    <div class="playlist-panel" id="playlist-panel">
+      <div class="panel-header">
+        <span class="panel-title">Playlist</span>
+        <div class="panel-actions">
+          <button class="panel-action-btn" title="Sort" onclick="sortPlaylist()">
+            <svg viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg>
+          </button>
+          <button class="panel-action-btn" title="Clear playlist" onclick="clearPlaylist()">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+          <button class="panel-action-btn" title="Close" onclick="togglePlaylist()">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="playlist-search">
+        <input type="text" placeholder="Search playlist..." id="playlist-search-input" oninput="filterPlaylist()">
+      </div>
+      <div class="playlist-list" id="playlist-list"></div>
+      <div class="playlist-footer">
+        <span class="playlist-count" id="playlist-count">0 items</span>
+        <button class="playlist-add-btn" onclick="openMultipleFiles()">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add Files
+        </button>
+      </div>
+    </div>
+    
+    <!-- Watch Together Panel -->
+    <div class="watch-panel" id="watch-panel">
+      <div class="panel-header">
+        <div class="panel-title">Watch Together</div>
+        <div class="panel-actions">
+          <button class="panel-action-btn" onclick="toggleWatchPanel()" title="Close">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="watch-status">
+        <div class="watch-status-dot" id="watch-status-dot"></div>
+        <span id="watch-status-text">Disconnected</span>
+      </div>
+
+      <div class="watch-room-section" id="watch-create-section">
+        <button class="watch-btn" onclick="createWatchRoom()">Create Room</button>
+        <div style="text-align:center; font-size:12px; color:var(--gray-secondary); margin:4px 0;">OR</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="watch-join-input" class="watch-room-input" placeholder="Room Code" autocomplete="off" onkeydown="if(event.key==='Enter') joinWatchRoom()">
+          <button class="watch-btn secondary" style="width:auto; padding:0 16px;" onclick="joinWatchRoom()">Join</button>
+        </div>
+      </div>
+
+      <div class="watch-room-section" id="watch-active-section" style="display:none;">
+        <div style="font-size:12px; color:var(--gray-secondary); text-align:center; margin-bottom:4px;">ROOM CODE</div>
+        <div class="watch-room-code" id="watch-room-code-display" onclick="copyRoomCode()" title="Click to copy">------</div>
+        <button class="watch-btn secondary" style="margin-top:8px; color:var(--red);" onclick="disconnectWatch()">Leave Room</button>
+      </div>
+
+      <div class="watch-peers" id="watch-peers-list">
+        <!-- Peers will be populated here -->
+      </div>
+
+      <div class="watch-chat">
+        <div class="watch-chat-messages" id="watch-chat-messages">
+          <div class="watch-chat-bubble system">Welcome to Watch Together! Create or join a room to sync playback and chat.</div>
+        </div>
+        <div class="watch-emoji-bar">
+          <div style="display:flex; gap:2px; align-items:center;">
+            <button type="button" class="emoji-btn" onclick="insertEmoji('😂')" disabled>😂</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('😍')" disabled>😍</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('😭')" disabled>😭</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('🍿')" disabled>🍿</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('🎬')" disabled>🎬</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('😱')" disabled>😱</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('🤯')" disabled>🤯</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('💀')" disabled>💀</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('🔥')" disabled>🔥</button>
+            <button type="button" class="emoji-btn" onclick="insertEmoji('❤️')" disabled>❤️</button>
+          </div>
+        </div>
+        <form class="watch-chat-input-bar" onsubmit="sendChatMessage(event)">
+          <input type="text" id="watch-chat-input" class="watch-chat-input" placeholder="Send a message..." autocomplete="off" disabled>
+          <button type="submit" class="watch-chat-send" id="watch-chat-send" disabled>
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSPORT CONTROLS -->
+  <div class="controls-bar" id="controls-bar">
+    <!-- Seek bar -->
+    <div class="seek-container" id="seek-container">
+      <div class="seek-track" id="seek-track">
+        <div class="seek-buffer" id="seek-buffer"></div>
+        <div class="seek-progress" id="seek-progress"></div>
+        <div class="ab-region" id="ab-region" style="display:none;"></div>
+        <div class="ab-marker a-marker" id="ab-a-marker" style="display:none;"></div>
+        <div class="ab-marker b-marker" id="ab-b-marker" style="display:none;"></div>
+        <div class="seek-thumb" id="seek-thumb"></div>
+      </div>
+      <div class="seek-tooltip" id="seek-tooltip">0:00</div>
+    </div>
+
+    <!-- Controls row -->
+    <div class="controls-row">
+      <!-- Left: time + volume -->
+      <div class="controls-left">
+        <span class="time-display" id="time-display">0:00 / 0:00</span>
+        <div class="volume-group">
+          <button class="ctrl-btn" id="mute-btn" onclick="toggleMute()" title="Mute (M)">
+            <svg viewBox="0 0 24 24" id="volume-icon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+          <div class="volume-slider-container">
+            <input type="range" class="volume-slider" id="volume-slider" min="0" max="1" step="0.01" value="1" oninput="setVolume(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: transport -->
+      <div class="controls-center">
+        <button class="ctrl-btn" id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle">
+          <svg viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="prev-btn" onclick="playPrev()" title="Previous (P)">
+          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button class="ctrl-btn play-btn" id="play-btn" onclick="togglePlayPause()" title="Play/Pause (Space)">
+          <svg viewBox="0 0 24 24" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="stop-btn" onclick="stopPlayback()" title="Stop (S)">
+          <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="next-btn" onclick="playNext()" title="Next (N)">
+          <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="loop-btn" onclick="cycleLoop()" title="Loop (L)">
+          <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+        </button>
+      </div>
+
+      <!-- Right: secondary controls -->
+      <div class="controls-right">
+        <button class="ctrl-btn" id="ab-btn" onclick="toggleABRepeat()" title="A-B Repeat">
+          <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/><text x="12" y="14" font-size="7" fill="currentColor" text-anchor="middle" font-weight="bold">AB</text></svg>
+        </button>
+        <button class="ctrl-btn record-btn" id="record-btn" onclick="toggleRecord()" title="Record (R)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+        </button>
+        <button class="ctrl-btn" id="screenshot-btn" onclick="takeScreenshot()" title="Screenshot (Shift+S)">
+          <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+        </button>
+        <div style="position:relative;">
+          <button class="speed-btn" id="speed-btn" onclick="toggleSpeedPopup()" title="Playback Speed">1.0x</button>
+          <div class="speed-popup" id="speed-popup">
+            <div class="speed-option" onclick="setSpeed(0.25)">0.25x</div>
+            <div class="speed-option" onclick="setSpeed(0.5)">0.5x</div>
+            <div class="speed-option" onclick="setSpeed(0.75)">0.75x</div>
+            <div class="speed-option active" onclick="setSpeed(1)">1.0x</div>
+            <div class="speed-option" onclick="setSpeed(1.25)">1.25x</div>
+            <div class="speed-option" onclick="setSpeed(1.5)">1.5x</div>
+            <div class="speed-option" onclick="setSpeed(2)">2.0x</div>
+            <div class="speed-option" onclick="setSpeed(3)">3.0x</div>
+            <div class="speed-option" onclick="setSpeed(4)">4.0x</div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <button class="ctrl-btn" id="audio-track-btn" onclick="toggleAudioTrackPopup()" title="Audio Track (B)">
+            <svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
+          </button>
+          <div class="audio-track-popup" id="audio-track-popup">
+            <div class="audio-track-empty" id="audio-track-list">No audio tracks detected</div>
+          </div>
+        </div>
+        <button class="ctrl-btn" id="sub-btn" onclick="openSubtitleFile()" title="Subtitles (V)">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="filters-btn" onclick="toggleFilters()" title="Video Effects">
+          <svg viewBox="0 0 24 24"><path d="M17.66 7.93L12 2.27 6.34 7.93c-3.12 3.12-3.12 8.19 0 11.31C7.9 20.8 9.95 21.58 12 21.58c2.05 0 4.1-.78 5.66-2.34 3.12-3.12 3.12-8.19 0-11.31zM12 19.59c-1.6 0-3.11-.62-4.24-1.76C6.62 16.69 6 15.19 6 13.59s.62-3.11 1.76-4.24L12 5.1v14.49z"/></svg>
+        </button>
+        <button class="ctrl-btn" id="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen (F)">
+          <svg viewBox="0 0 24 24" id="fs-icon"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div class="context-menu" id="context-menu">
+  <div class="dropdown-item" onclick="togglePlayPause()">Play / Pause<span class="shortcut">Space</span></div>
+  <div class="dropdown-item" onclick="stopPlayback()">Stop<span class="shortcut">S</span></div>
+  <div class="dropdown-divider"></div>
+  <div class="dropdown-item" onclick="toggleFullscreen()">Fullscreen<span class="shortcut">F</span></div>
+  <div class="dropdown-item" onclick="togglePiP()">Picture in Picture</div>
+  <div class="dropdown-divider"></div>
+  <div class="dropdown-item" onclick="takeScreenshot()">Screenshot<span class="shortcut">Shift+S</span></div>
+  <div class="dropdown-item" onclick="toggleRecord()">Record<span class="shortcut">R</span></div>
+  <div class="dropdown-divider"></div>
+  <div class="dropdown-item" onclick="toggleInfoPanel()">Media Info<span class="shortcut">Ctrl+I</span></div>
+  <div class="dropdown-item" onclick="openFile()">Open File<span class="shortcut">Ctrl+O</span></div>
+</div>
+
+<!-- Shortcuts modal -->
+<div class="shortcuts-modal" id="shortcuts-modal">
+  <div class="panel-header">
+    <span class="panel-title">Keyboard Shortcuts</span>
+    <button class="panel-action-btn" onclick="toggleShortcutsModal()">
+      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+  <div class="shortcuts-body">
+    <div class="shortcuts-group-title">Playback</div>
+    <div class="shortcut-row"><span class="shortcut-action">Play / Pause</span><div class="shortcut-keys"><kbd>Space</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Stop</span><div class="shortcut-keys"><kbd>S</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Seek Backward 5s</span><div class="shortcut-keys"><kbd>←</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Seek Forward 5s</span><div class="shortcut-keys"><kbd>→</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Jump Backward 30s</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>←</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Jump Forward 30s</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>→</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Next Track</span><div class="shortcut-keys"><kbd>N</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Previous Track</span><div class="shortcut-keys"><kbd>P</kbd></div></div>
+
+    <div class="shortcuts-group-title">Speed</div>
+    <div class="shortcut-row"><span class="shortcut-action">Speed Up</span><div class="shortcut-keys"><kbd>+</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Speed Down</span><div class="shortcut-keys"><kbd>-</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Normal Speed</span><div class="shortcut-keys"><kbd>=</kbd></div></div>
+
+    <div class="shortcuts-group-title">Audio</div>
+    <div class="shortcut-row"><span class="shortcut-action">Mute</span><div class="shortcut-keys"><kbd>M</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Volume Up</span><div class="shortcut-keys"><kbd>↑</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Volume Down</span><div class="shortcut-keys"><kbd>↓</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Equalizer</span><div class="shortcut-keys"><kbd>E</kbd></div></div>
+
+    <div class="shortcuts-group-title">Video</div>
+    <div class="shortcut-row"><span class="shortcut-action">Fullscreen</span><div class="shortcut-keys"><kbd>F</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Screenshot</span><div class="shortcut-keys"><kbd>Shift</kbd><kbd>S</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Subtitles</span><div class="shortcut-keys"><kbd>V</kbd></div></div>
+
+    <div class="shortcuts-group-title">General</div>
+    <div class="shortcut-row"><span class="shortcut-action">Open File</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>O</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Toggle Playlist</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>L</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Media Info</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>I</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Record</span><div class="shortcut-keys"><kbd>R</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Loop Mode</span><div class="shortcut-keys"><kbd>L</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">A-B Repeat</span><div class="shortcut-keys"><kbd>A</kbd></div></div>
+    <div class="shortcut-row"><span class="shortcut-action">Watch Together</span><div class="shortcut-keys"><kbd>W</kbd></div></div>
+  </div>
+</div>
+
+
+<!-- Username Modal -->
+<div class="modal-overlay" id="username-overlay" onclick="closeUsernameModal()"></div>
+<div class="username-modal" id="username-modal">
+  <div class="username-modal-title">Choose a Username</div>
+  <div class="username-modal-desc">This name will be visible to others in the room. Saved locally.</div>
+  <input type="text" id="username-input" class="username-modal-input" placeholder="Your name" autocomplete="off" onkeydown="if(event.key==='Enter') saveUsernameFromModal()">
+  <button class="watch-btn" onclick="saveUsernameFromModal()">Save & Continue</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-input" accept="video/*,audio/*" style="display:none" onchange="handleFileInput(this)">
+<input type="file" id="file-input-multi" accept="video/*,audio/*" multiple style="display:none" onchange="handleMultiFileInput(this)">
+<input type="file" id="subtitle-input" accept=".vtt,.srt,.ass,.ssa,.sub" style="display:none" onchange="handleSubtitleInput(this)">
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script>
+// ============================================
+// STATE
+// ============================================
+const state = {
+  playlist: [],
+  currentIndex: -1,
+  isPlaying: false,
+  volume: 1,
+  speed: 1,
+  loopMode: 'off', // off, single, all
+  shuffle: false,
+  abRepeat: { a: null, b: null, state: 'off' }, // off, a-set, active
+  isRecording: false,
+  recorder: null,
+  recordedChunks: [],
+  subtitles: [],
+  subtitlesEnabled: true,
+  currentSubtitle: '',
+  eqEnabled: false,
+  audioContext: null,
+  sourceNode: null,
+  gainNode: null,
+  eqFilters: [],
+  seekDragging: false,
+};
+
+const video = document.getElementById('video-player');
+
+// EQ presets (10-band: 31, 62, 125, 250, 500, 1K, 2K, 4K, 8K, 16K Hz)
+const EQ_FREQS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+const EQ_LABELS = ['31', '62', '125', '250', '500', '1K', '2K', '4K', '8K', '16K'];
+const EQ_PRESETS = {
+  flat: [0,0,0,0,0,0,0,0,0,0],
+  rock: [5,4,3,1.5,0,-0.5,0,1.5,3,4],
+  pop: [-1.5,0,1.5,3,4,4,3,1.5,0,-1.5],
+  jazz: [4,3,1.5,2,-1.5,-1.5,0,1.5,3,4],
+  classical: [5,4,3,2.5,-1.5,-1.5,0,2,3,4],
+  bass: [6,5,4,2.5,1,0,0,0,0,0],
+  treble: [0,0,0,0,0,1,2.5,4,5,6],
+  vocal: [-2,-1,0,2,4.5,4.5,4,2,0,-2],
+  loudness: [6,4,0,-2,0,0,-2,0,2,4],
+};
+
+// Speed steps
+const SPEED_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+
+// ============================================
+// INITIALIZATION
+// ============================================
+function init() {
+  buildEqBands();
+  setupMediaEvents();
+  setupSeekBar();
+  setupDragDrop();
+  setupContextMenu();
+  setupKeyboardShortcuts();
+  updateVolumeIcon();
+  
+  // Fullscreen mouse idle logic
+  let mouseIdleTimer = null;
+  let rafPending = false;
+  document.addEventListener('mousemove', (e) => {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      const app = document.getElementById('app');
+      if (app.classList.contains('app-fullscreen')) {
+        if (e.target.closest('.watch-panel') || e.target.closest('.playlist-panel')) {
+          return;
+        }
+        app.classList.remove('mouse-idle');
+        clearTimeout(mouseIdleTimer);
+        mouseIdleTimer = setTimeout(() => {
+          if (!state.seekDragging && document.fullscreenElement) {
+            app.classList.add('mouse-idle');
+          }
+        }, 2500);
+      }
+    });
+  });
+
+  // Sync UI when browser exits fullscreen (e.g. Escape key)
+  document.addEventListener('fullscreenchange', () => {
+    const app = document.getElementById('app');
+    if (!document.fullscreenElement) {
+      app.classList.remove('app-fullscreen');
+      app.classList.remove('mouse-idle');
+      document.getElementById('fs-icon').innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+    }
+  });
+
+  updateVolumeSliderFill();
+}
+
+// ============================================
+// FILE HANDLING
+// ============================================
+function openFile() {
+  document.getElementById('file-input').click();
+  closeAllMenus();
+}
+
+function openMultipleFiles() {
+  document.getElementById('file-input-multi').click();
+  closeAllMenus();
+}
+
+function openSubtitleFile() {
+  document.getElementById('subtitle-input').click();
+  closeAllMenus();
+}
+
+function handleFileInput(input) {
+  if (input.files.length > 0) {
+    addToPlaylist(Array.from(input.files));
+    if (state.playlist.length === input.files.length) {
+      playTrack(0);
+    }
+  }
+  input.value = '';
+}
+
+function handleMultiFileInput(input) {
+  if (input.files.length > 0) {
+    const startIdx = state.playlist.length;
+    addToPlaylist(Array.from(input.files));
+    if (state.currentIndex === -1) playTrack(startIdx);
+  }
+  input.value = '';
+}
+
+function handleSubtitleInput(input) {
+  if (input.files.length > 0) {
+    loadSubtitleFile(input.files[0]);
+  }
+  input.value = '';
+}
+
+// ============================================
+// PLAYLIST MANAGEMENT
+// ============================================
+function addToPlaylist(files) {
+  files.forEach(file => {
+    const url = URL.createObjectURL(file);
+    state.playlist.push({
+      name: file.name.replace(/\.[^.]+$/, ''),
+      file: file,
+      url: url,
+      type: file.type.startsWith('video') ? 'video' : 'audio',
+      duration: null,
+    });
+  });
+  renderPlaylist();
+  updatePlaylistCount();
+}
+
+function renderPlaylist() {
+  const list = document.getElementById('playlist-list');
+  const search = document.getElementById('playlist-search-input').value.toLowerCase();
+
+  list.innerHTML = '';
+  state.playlist.forEach((item, idx) => {
+    if (search && !item.name.toLowerCase().includes(search)) return;
+
+    const el = document.createElement('div');
+    el.className = 'playlist-item' + (idx === state.currentIndex ? ' active playing' : '');
+    el.onclick = () => playTrack(idx);
+    el.innerHTML = `
+      <span class="playlist-item-num">${idx === state.currentIndex ? '<div class="playing-indicator"><span></span><span></span><span></span><span></span></div>' : (idx + 1)}</span>
+      <div class="playlist-item-info">
+        <div class="playlist-item-title">${item.name}</div>
+        <div class="playlist-item-meta">${item.type === 'video' ? 'Video' : 'Audio'} • ${item.file.name.split('.').pop().toUpperCase()}</div>
+      </div>
+      <span class="playlist-item-duration">${item.duration ? formatTime(item.duration) : '--:--'}</span>
+      <button class="playlist-item-remove" onclick="event.stopPropagation(); removeFromPlaylist(${idx})">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function removeFromPlaylist(idx) {
+  URL.revokeObjectURL(state.playlist[idx].url);
+  state.playlist.splice(idx, 1);
+  if (idx < state.currentIndex) {
+    state.currentIndex--;
+  } else if (idx === state.currentIndex) {
+    stopPlayback();
+    state.currentIndex = -1;
+    if (state.playlist.length > 0) {
+      playTrack(Math.min(idx, state.playlist.length - 1));
+    }
+  }
+  renderPlaylist();
+  updatePlaylistCount();
+}
+
+function clearPlaylist() {
+  state.playlist.forEach(item => URL.revokeObjectURL(item.url));
+  state.playlist = [];
+  state.currentIndex = -1;
+  stopPlayback();
+  renderPlaylist();
+  updatePlaylistCount();
+  document.getElementById('drop-zone').classList.remove('has-media');
+  showToast('Playlist cleared');
+}
+
+function sortPlaylist() {
+  const currentTrack = state.currentIndex >= 0 ? state.playlist[state.currentIndex] : null;
+  state.playlist.sort((a, b) => a.name.localeCompare(b.name));
+  if (currentTrack) {
+    state.currentIndex = state.playlist.indexOf(currentTrack);
+  }
+  renderPlaylist();
+  showToast('Sorted by name');
+}
+
+function filterPlaylist() { renderPlaylist(); }
+
+function updatePlaylistCount() {
+  const el = document.getElementById('playlist-count');
+  el.textContent = `${state.playlist.length} item${state.playlist.length !== 1 ? 's' : ''}`;
+}
+
+// ============================================
+// PLAYBACK
+// ============================================
+function playTrack(idx) {
+  if (idx < 0 || idx >= state.playlist.length) return;
+  state.currentIndex = idx;
+  const track = state.playlist[idx];
+
+  video.src = track.url;
+  video.load();
+  video.play().then(() => {
+    state.isPlaying = true;
+    updatePlayIcon();
+    document.getElementById('drop-zone').classList.add('has-media');
+    document.title = `${track.name} — VLC`;
+    initAudioContext();
+  }).catch(() => {});
+
+  renderPlaylist();
+}
+
+function togglePlayPause() {
+  closeAllMenus();
+  if (!video.src || state.currentIndex === -1) {
+    if (state.playlist.length > 0) playTrack(0);
+    return;
+  }
+  if (video.paused) {
+    video.play();
+    state.isPlaying = true;
+    showOSD('play', 'Play');
+  } else {
+    video.pause();
+    state.isPlaying = false;
+    showOSD('pause', 'Paused');
+  }
+  updatePlayIcon();
+}
+
+function stopPlayback() {
+  closeAllMenus();
+  video.pause();
+  video.currentTime = 0;
+  state.isPlaying = false;
+  updatePlayIcon();
+  updateSeekBar();
+  showOSD('stop', 'Stopped');
+}
+
+function playNext() {
+  closeAllMenus();
+  if (state.playlist.length === 0) return;
+  let next;
+  if (state.shuffle) {
+    next = Math.floor(Math.random() * state.playlist.length);
+  } else {
+    next = (state.currentIndex + 1) % state.playlist.length;
+  }
+  playTrack(next);
+}
+
+function playPrev() {
+  closeAllMenus();
+  if (state.playlist.length === 0) return;
+  if (video.currentTime > 3) {
+    video.currentTime = 0;
+    return;
+  }
+  let prev;
+  if (state.shuffle) {
+    prev = Math.floor(Math.random() * state.playlist.length);
+  } else {
+    prev = (state.currentIndex - 1 + state.playlist.length) % state.playlist.length;
+  }
+  playTrack(prev);
+}
+
+// ============================================
+// MEDIA EVENTS
+// ============================================
+function setupMediaEvents() {
+  video.addEventListener('timeupdate', () => {
+    if (!state.seekDragging) updateSeekBar();
+    updateTimeDisplay();
+    checkABRepeat();
+    updateSubtitle();
+  });
+
+  video.addEventListener('loadedmetadata', () => {
+    if (state.currentIndex >= 0) {
+      state.playlist[state.currentIndex].duration = video.duration;
+      renderPlaylist();
+    }
+    updateTimeDisplay();
+  });
+
+  video.addEventListener('progress', updateBuffer);
+
+  video.addEventListener('ended', () => {
+    if (state.loopMode === 'single') {
+      video.currentTime = 0;
+      video.play();
+    } else if (state.loopMode === 'all' || state.currentIndex < state.playlist.length - 1) {
+      playNext();
+    } else {
+      state.isPlaying = false;
+      updatePlayIcon();
+    }
+  });
+
+  video.addEventListener('play', () => { state.isPlaying = true; updatePlayIcon(); });
+  video.addEventListener('pause', () => { state.isPlaying = false; updatePlayIcon(); });
+}
+
+function updatePlayIcon() {
+  const icon = document.getElementById('play-icon');
+  if (state.isPlaying) {
+    icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  } else {
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+}
+
+// ============================================
+// SEEK BAR
+// ============================================
+function setupSeekBar() {
+  const container = document.getElementById('seek-container');
+  const tooltip = document.getElementById('seek-tooltip');
+
+  function handleSeekMouseMove(e) {
+    if (state.seekDragging) seekTo(e);
+  }
+
+  container.addEventListener('mousedown', (e) => {
+    state.seekDragging = true;
+    document.addEventListener('mousemove', handleSeekMouseMove);
+    seekTo(e);
+  });
+
+  container.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const time = video.duration ? pct * video.duration : 0;
+    tooltip.textContent = formatTime(time);
+    tooltip.style.left = (pct * 100) + '%';
+
+    if (state.seekDragging) seekTo(e);
+  });
+
+
+
+  document.addEventListener('mouseup', () => {
+    if (state.seekDragging) {
+      state.seekDragging = false;
+      document.removeEventListener('mousemove', handleSeekMouseMove);
+    }
+  });
+}
+
+function seekTo(e) {
+  const container = document.getElementById('seek-container');
+  const rect = container.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  if (video.duration) {
+    video.currentTime = pct * video.duration;
+    updateSeekBar();
+  }
+}
+
+function updateSeekBar() {
+  if (!video.duration) return;
+  const pct = (video.currentTime / video.duration) * 100;
+  document.getElementById('seek-progress').style.width = pct + '%';
+  document.getElementById('seek-thumb').style.left = pct + '%';
+}
+
+function updateBuffer() {
+  if (!video.duration || video.buffered.length === 0) return;
+  const end = video.buffered.end(video.buffered.length - 1);
+  document.getElementById('seek-buffer').style.width = (end / video.duration * 100) + '%';
+}
+
+function updateTimeDisplay() {
+  const current = formatTime(video.currentTime || 0);
+  const duration = formatTime(video.duration || 0);
+  document.getElementById('time-display').textContent = `${current} / ${duration}`;
+}
+
+function seekRelative(seconds) {
+  if (video.duration) {
+    video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + seconds));
+    showOSD(seconds > 0 ? 'forward' : 'backward', `${seconds > 0 ? '+' : ''}${seconds}s`);
+  }
+}
+
+// ============================================
+// VOLUME
+// ============================================
+function setVolume(val) {
+  val = parseFloat(val);
+  if (val > 0) state.volume = val;
+  video.volume = val;
+  state.isMuted = val === 0;
+  video.muted = state.isMuted;
+  document.getElementById('volume-slider').value = val;
+  updateVolumeIcon();
+  updateVolumeSliderFill();
+}
+
+function adjustVolume(delta) {
+  const newVol = Math.max(0, Math.min(1, state.volume + delta));
+  setVolume(newVol);
+  showOSD('volume', `Volume: ${Math.round(newVol * 100)}%`);
+}
+
+function toggleMute() {
+  closeAllMenus();
+  state.isMuted = !state.isMuted;
+  video.muted = state.isMuted;
+  if (state.isMuted) {
+    document.getElementById('volume-slider').value = 0;
+    showOSD('mute', 'Muted');
+  } else {
+    if (state.volume === 0) state.volume = 0.5;
+    video.volume = state.volume;
+    document.getElementById('volume-slider').value = state.volume;
+    showOSD('volume', `Volume: ${Math.round(state.volume * 100)}%`);
+  }
+  updateVolumeIcon();
+  updateVolumeSliderFill();
+}
+
+function updateVolumeIcon() {
+  const icon = document.getElementById('volume-icon');
+  const vol = state.isMuted ? 0 : state.volume;
+  if (vol === 0) {
+    icon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+  } else if (vol < 0.5) {
+    icon.innerHTML = '<path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>';
+  } else {
+    icon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+  }
+}
+
+function updateVolumeSliderFill() {
+  const slider = document.getElementById('volume-slider');
+  const val = state.isMuted ? 0 : parseFloat(slider.value);
+  const pct = val * 100;
+  slider.style.background = `linear-gradient(to right, var(--blue) ${pct}%, rgba(255,255,255,0.12) ${pct}%)`;
+}
+
+// ============================================
+// AUDIO TRACKS
+// ============================================
+function detectAudioTracks() {
+  const listEl = document.getElementById('audio-track-list');
+  
+  // HTML5 audioTracks API (Safari, or Chrome with experimental flags)
+  if (video.audioTracks && video.audioTracks.length > 0) {
+    renderAudioTracks(video.audioTracks);
+    return;
+  }
+  
+  // Fallback for browsers without native multi-track support
+  if (video.src) {
+    listEl.innerHTML = `
+      <div class="audio-track-option active" data-track="0">
+        <span class="track-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+        <span>Track 1 — Default</span>
+      </div>
+      <div style="padding:16px 12px 8px; text-align:center;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--orange)" style="margin-bottom:8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:4px;">Browser Limitation</div>
+        <div style="font-size:11px;color:var(--gray-secondary);line-height:1.4;">
+          Standard web browsers do not support switching built-in audio tracks (like dual-audio MKV) via Javascript.<br><br>
+          To switch tracks, please try using Safari, or enable <b>#enable-experimental-web-platform-features</b> in Chrome flags.
+        </div>
+      </div>
+    `;
+  } else {
+    listEl.innerHTML = '<div class="audio-track-empty">No media loaded</div>';
+  }
+}
+
+function renderAudioTracks(tracks) {
+  const listEl = document.getElementById('audio-track-list');
+  let html = '';
+  for (let i = 0; i < tracks.length; i++) {
+    const track = tracks[i];
+    const label = track.label || track.language || `Track ${i + 1}`;
+    const lang = track.language ? ` (${track.language.toUpperCase()})` : '';
+    const isActive = track.enabled;
+    html += `
+      <div class="audio-track-option${isActive ? ' active' : ''}" onclick="switchAudioTrack(${i})">
+        <span class="track-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+        <span>${label}${lang}</span>
+      </div>
+    `;
+  }
+  listEl.innerHTML = html;
+}
+
+function switchAudioTrack(idx) {
+  if (!video.audioTracks) return;
+  for (let i = 0; i < video.audioTracks.length; i++) {
+    video.audioTracks[i].enabled = (i === idx);
+  }
+  const track = video.audioTracks[idx];
+  const label = track.label || track.language || `Track ${idx + 1}`;
+  showOSD('volume', `Audio: ${label}`);
+  showToast(`Switched to: ${label}`);
+  detectAudioTracks(); // refresh UI
+  closeAudioTrackPopup();
+}
+
+function toggleAudioTrackPopup() {
+  closeAllMenus();
+  const popup = document.getElementById('audio-track-popup');
+  const isOpen = popup.classList.contains('show');
+  if (!isOpen) {
+    detectAudioTracks();
+  }
+  popup.classList.toggle('show');
+  document.getElementById('audio-track-btn').classList.toggle('active', !isOpen);
+}
+
+function closeAudioTrackPopup() {
+  document.getElementById('audio-track-popup').classList.remove('show');
+  document.getElementById('audio-track-btn').classList.remove('active');
+}
+
+// ============================================
+// SPEED
+// ============================================
+function setSpeed(val) {
+  state.speed = val;
+  video.playbackRate = val;
+  document.getElementById('speed-btn').textContent = val + 'x';
+  closeSpeedPopup();
+  showOSD('speed', `Speed: ${val}x`);
+
+  // Update active state in popup
+  document.querySelectorAll('.speed-option').forEach(opt => {
+    opt.classList.toggle('active', parseFloat(opt.textContent) === val);
+  });
+}
+
+function cycleSpeed(dir) {
+  const currentIdx = SPEED_STEPS.indexOf(state.speed);
+  let newIdx;
+  if (currentIdx === -1) {
+    newIdx = 3; // 1x
+  } else {
+    newIdx = Math.max(0, Math.min(SPEED_STEPS.length - 1, currentIdx + dir));
+  }
+  setSpeed(SPEED_STEPS[newIdx]);
+}
+
+function toggleSpeedPopup() {
+  document.getElementById('speed-popup').classList.toggle('show');
+}
+
+function closeSpeedPopup() {
+  document.getElementById('speed-popup').classList.remove('show');
+}
+
+// ============================================
+// LOOP & SHUFFLE
+// ============================================
+function cycleLoop() {
+  closeAllMenus();
+  const modes = ['off', 'single', 'all'];
+  const idx = (modes.indexOf(state.loopMode) + 1) % modes.length;
+  state.loopMode = modes[idx];
+
+  const btn = document.getElementById('loop-btn');
+  btn.classList.toggle('active', state.loopMode !== 'off');
+
+  const labels = { off: 'Loop: Off', single: 'Loop: Single', all: 'Loop: All' };
+  showOSD('loop', labels[state.loopMode]);
+
+  if (state.loopMode === 'single') {
+    video.loop = true;
+  } else {
+    video.loop = false;
+  }
+}
+
+function toggleShuffle() {
+  closeAllMenus();
+  state.shuffle = !state.shuffle;
+  document.getElementById('shuffle-btn').classList.toggle('active', state.shuffle);
+  showOSD('shuffle', state.shuffle ? 'Shuffle: On' : 'Shuffle: Off');
+}
+
+// ============================================
+// A-B REPEAT
+// ============================================
+function toggleABRepeat() {
+  closeAllMenus();
+  if (state.abRepeat.state === 'off') {
+    state.abRepeat.a = video.currentTime;
+    state.abRepeat.state = 'a-set';
+    showABMarkers();
+    showOSD('ab', 'A point set');
+    document.getElementById('ab-btn').classList.add('active');
+  } else if (state.abRepeat.state === 'a-set') {
+    state.abRepeat.b = video.currentTime;
+    state.abRepeat.state = 'active';
+    showABMarkers();
+    showOSD('ab', 'A-B repeat active');
+  } else {
+    state.abRepeat = { a: null, b: null, state: 'off' };
+    hideABMarkers();
+    showOSD('ab', 'A-B repeat off');
+    document.getElementById('ab-btn').classList.remove('active');
+  }
+}
+
+function checkABRepeat() {
+  if (state.abRepeat.state === 'active' && video.currentTime >= state.abRepeat.b) {
+    video.currentTime = state.abRepeat.a;
+  }
+}
+
+function showABMarkers() {
+  if (!video.duration) return;
+  const aPct = (state.abRepeat.a / video.duration) * 100;
+  document.getElementById('ab-a-marker').style.display = 'block';
+  document.getElementById('ab-a-marker').style.left = aPct + '%';
+
+  if (state.abRepeat.b !== null) {
+    const bPct = (state.abRepeat.b / video.duration) * 100;
+    document.getElementById('ab-b-marker').style.display = 'block';
+    document.getElementById('ab-b-marker').style.left = bPct + '%';
+    const region = document.getElementById('ab-region');
+    region.style.display = 'block';
+    region.style.left = aPct + '%';
+    region.style.width = (bPct - aPct) + '%';
+  }
+}
+
+function hideABMarkers() {
+  document.getElementById('ab-a-marker').style.display = 'none';
+  document.getElementById('ab-b-marker').style.display = 'none';
+  document.getElementById('ab-region').style.display = 'none';
+}
+
+// ============================================
+// FULLSCREEN
+// ============================================
+function toggleFullscreen() {
+  closeAllMenus();
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+    document.getElementById('app').classList.add('app-fullscreen');
+    document.getElementById('fs-icon').innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
+  } else {
+    document.exitFullscreen();
+    document.getElementById('app').classList.remove('app-fullscreen');
+    document.getElementById('fs-icon').innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+  }
+}
+
+// ============================================
+// PICTURE IN PICTURE
+// ============================================
+async function togglePiP() {
+  closeAllMenus();
+  try {
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+    } else if (video.src) {
+      await video.requestPictureInPicture();
+    }
+  } catch (e) {
+    showToast('Picture-in-Picture not supported');
+  }
+}
+
+// ============================================
+// ASPECT RATIO
+// ============================================
+function setAspect(mode) {
+  closeAllMenus();
+  if (mode === 'contain' || mode === 'cover') {
+    video.style.objectFit = mode;
+    video.style.aspectRatio = '';
+  } else {
+    video.style.objectFit = 'contain';
+    video.style.aspectRatio = mode.replace('/', ' / ');
+  }
+  showOSD('aspect', `Aspect: ${mode}`);
+}
+
+// ============================================
+// SCREENSHOT
+// ============================================
+function takeScreenshot() {
+  closeAllMenus();
+  if (!video.src) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 1920;
+  canvas.height = video.videoHeight || 1080;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const link = document.createElement('a');
+  link.download = `screenshot_${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('Screenshot saved');
+}
+
+// ============================================
+// RECORDING
+// ============================================
+function toggleRecord() {
+  closeAllMenus();
+  if (!video.src) return;
+  if (!state.isRecording) {
+    try {
+      const videoStream = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+      let recordStream = videoStream;
+
+      // If Web Audio API is active, capture processed audio
+      if (state.audioContext && state.eqFilters.length > 0) {
+        try {
+          const dest = state.audioContext.createMediaStreamDestination();
+          state.eqFilters[state.eqFilters.length - 1].connect(dest);
+          state.recordDest = dest;
+          const videoTracks = videoStream.getVideoTracks();
+          const audioTracks = dest.stream.getAudioTracks();
+          recordStream = new MediaStream([...videoTracks, ...audioTracks]);
+        } catch (e) {
+          console.warn('Could not capture EQ audio, using raw stream:', e);
+        }
+      }
+
+      state.recorder = new MediaRecorder(recordStream);
+      state.recordedChunks = [];
+      state.recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) state.recordedChunks.push(e.data);
+      };
+      state.recorder.onstop = () => {
+        const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `recording_${Date.now()}.webm`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast('Recording saved');
+        // Clean up audio destination node
+        if (state.recordDest) {
+          try { state.eqFilters[state.eqFilters.length - 1].disconnect(state.recordDest); } catch(e) {}
+          state.recordDest = null;
+        }
+      };
+      state.recorder.start();
+      state.isRecording = true;
+      document.getElementById('record-btn').classList.add('active');
+      showOSD('record', 'Recording started');
+    } catch (e) {
+      showToast('Recording not supported');
+    }
+  } else {
+    state.recorder.stop();
+    state.isRecording = false;
+    document.getElementById('record-btn').classList.remove('active');
+    showOSD('record', 'Recording stopped');
+  }
+}
+
+// ============================================
+// SUBTITLES
+// ============================================
+function loadSubtitleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    if (file.name.endsWith('.srt')) {
+      state.subtitles = parseSRT(text);
+      state.currentCueIndex = 0;
+    } else if (file.name.endsWith('.vtt')) {
+      state.subtitles = parseVTT(text);
+    }
+    state.subtitlesEnabled = true;
+    showToast(`Subtitles loaded: ${file.name}`);
+  };
+  reader.readAsText(file);
+}
+
+function parseSRT(text) {
+  const blocks = text.trim().split(/\n\s*\n/);
+  return blocks.map(block => {
+    const lines = block.trim().split('\n');
+    if (lines.length < 3) return null;
+    const timeLine = lines[1];
+    const match = timeLine.match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/);
+    if (!match) return null;
+    const start = parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/1000;
+    const end = parseInt(match[5])*3600 + parseInt(match[6])*60 + parseInt(match[7]) + parseInt(match[8])/1000;
+    const content = lines.slice(2).join('<br>');
+    return { start, end, content };
+  }).filter(Boolean);
+}
+
+function parseVTT(text) {
+  const lines = text.trim().split('\n');
+  const cues = [];
+  let i = 0;
+  // Skip header
+  while (i < lines.length && !lines[i].includes('-->')) i++;
+  while (i < lines.length) {
+    if (lines[i].includes('-->')) {
+      const match = lines[i].match(/(\d{2}):(\d{2}):(\d{2})[.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[.](\d{3})/);
+      if (match) {
+        const start = parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/1000;
+        const end = parseInt(match[5])*3600 + parseInt(match[6])*60 + parseInt(match[7]) + parseInt(match[8])/1000;
+        i++;
+        let content = '';
+        while (i < lines.length && lines[i].trim() !== '' && !lines[i].includes('-->')) {
+          content += (content ? '<br>' : '') + lines[i].trim();
+          i++;
+        }
+        cues.push({ start, end, content });
+      } else {
+        i++;
+      }
+    } else {
+      i++;
+    }
+  }
+  return cues;
+}
+
+function updateSubtitle() {
+  if (!state.subtitlesEnabled || state.subtitles.length === 0) {
+    document.getElementById('subtitle-display').style.display = 'none';
+    return;
+  }
+  const t = video.currentTime;
+  const cue = state.subtitles.find(c => t >= c.start && t <= c.end);
+  const display = document.getElementById('subtitle-display');
+  const textEl = document.getElementById('subtitle-text');
+  if (cue) {
+    textEl.innerHTML = cue.content;
+    display.style.display = 'block';
+  } else {
+    display.style.display = 'none';
+  }
+}
+
+function toggleSubtitles() {
+  closeAllMenus();
+  state.subtitlesEnabled = !state.subtitlesEnabled;
+  document.getElementById('sub-btn').classList.toggle('active', state.subtitlesEnabled);
+  showOSD('subtitle', state.subtitlesEnabled ? 'Subtitles: On' : 'Subtitles: Off');
+}
+
+// ============================================
+// EQUALIZER (Web Audio API)
+// ============================================
+function initAudioContext() {
+  if (state.audioContext) return;
+  try {
+    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    state.sourceNode = state.audioContext.createMediaElementSource(video);
+    state.gainNode = state.audioContext.createGain();
+
+    // Create biquad filters for each band
+    state.eqFilters = EQ_FREQS.map(freq => {
+      const filter = state.audioContext.createBiquadFilter();
+      filter.type = 'peaking';
+      filter.frequency.value = freq;
+      filter.Q.value = 1.4;
+      filter.gain.value = 0;
+      return filter;
+    });
+
+    // Chain: source -> gain -> filters -> destination
+    state.sourceNode.connect(state.gainNode);
+    let prev = state.gainNode;
+    state.eqFilters.forEach(filter => {
+      prev.connect(filter);
+      prev = filter;
+    });
+    prev.connect(state.audioContext.destination);
+  } catch (e) {
+    console.warn('Web Audio API not available:', e);
+  }
+}
+
+function buildEqBands() {
+  const container = document.getElementById('eq-bands');
+  container.innerHTML = '';
+  EQ_FREQS.forEach((freq, i) => {
+    const band = document.createElement('div');
+    band.className = 'eq-band';
+    band.innerHTML = `
+      <span class="eq-band-val" id="eq-val-${i}">0 dB</span>
+      <div class="eq-band-slider">
+        <input type="range" min="-12" max="12" value="0" step="0.5"
+               oninput="updateEqBand(${i}, this.value)" id="eq-band-${i}">
+      </div>
+      <span class="eq-band-label">${EQ_LABELS[i]}</span>
+    `;
+    container.appendChild(band);
+  });
+}
+
+function updateEqBand(idx, val) {
+  val = parseFloat(val);
+  if (state.eqFilters[idx]) {
+    state.eqFilters[idx].gain.value = val;
+  }
+  document.getElementById(`eq-val-${idx}`).textContent = `${val > 0 ? '+' : ''}${val} dB`;
+}
+
+function updatePreamp() {
+  const val = parseFloat(document.getElementById('eq-preamp').value);
+  if (state.gainNode) {
+    state.gainNode.gain.value = Math.pow(10, val / 20);
+  }
+  document.getElementById('eq-preamp-val').textContent = `${val > 0 ? '+' : ''}${val} dB`;
+}
+
+function loadEqPreset() {
+  const preset = document.getElementById('eq-preset').value;
+  const values = EQ_PRESETS[preset] || EQ_PRESETS.flat;
+  values.forEach((val, i) => {
+    document.getElementById(`eq-band-${i}`).value = val;
+    updateEqBand(i, val);
+  });
+}
+
+function toggleEqEnabled() {
+  state.eqEnabled = !state.eqEnabled;
+  document.getElementById('eq-toggle').classList.toggle('active', state.eqEnabled);
+  if (state.eqFilters.length > 0) {
+    state.eqFilters.forEach(f => {
+      if (!state.eqEnabled) f.gain.value = 0;
+    });
+    if (state.eqEnabled) loadEqPreset();
+  }
+}
+
+function toggleEqualizer() {
+  closeAllMenus();
+  const panel = document.getElementById('eq-panel');
+  panel.classList.toggle('open');
+  document.getElementById('nav-eq-btn').classList.toggle('active', panel.classList.contains('open'));
+}
+
+// ============================================
+// VIDEO FILTERS
+// ============================================
+function updateFilters() {
+  const b = document.getElementById('filter-brightness').value;
+  const c = document.getElementById('filter-contrast').value;
+  const s = document.getElementById('filter-saturation').value;
+  const h = document.getElementById('filter-hue').value;
+  const bl = document.getElementById('filter-blur').value;
+
+  video.style.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%) hue-rotate(${h}deg) blur(${bl}px)`;
+
+  document.getElementById('val-brightness').textContent = b + '%';
+  document.getElementById('val-contrast').textContent = c + '%';
+  document.getElementById('val-saturation').textContent = s + '%';
+  document.getElementById('val-hue').textContent = h + '°';
+  document.getElementById('val-blur').textContent = bl + 'px';
+}
+
+function resetFilters() {
+  document.getElementById('filter-brightness').value = 100;
+  document.getElementById('filter-contrast').value = 100;
+  document.getElementById('filter-saturation').value = 100;
+  document.getElementById('filter-hue').value = 0;
+  document.getElementById('filter-blur').value = 0;
+  updateFilters();
+  showToast('Filters reset');
+}
+
+function toggleFilters() {
+  closeAllMenus();
+  document.getElementById('filters-panel').classList.toggle('open');
+}
+
+// ============================================
+// MEDIA INFO
+// ============================================
+function toggleInfoPanel() {
+  closeAllMenus();
+  const panel = document.getElementById('info-panel');
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    return;
+  }
+
+  const body = document.getElementById('info-body');
+  const track = state.currentIndex >= 0 ? state.playlist[state.currentIndex] : null;
+
+  let rows = '';
+  if (track) {
+    rows += infoRow('File Name', track.file.name);
+    rows += infoRow('Type', track.file.type || 'Unknown');
+    rows += infoRow('Size', formatFileSize(track.file.size));
+    if (video.videoWidth) {
+      rows += infoRow('Resolution', `${video.videoWidth} × ${video.videoHeight}`);
+    }
+    if (video.duration) {
+      rows += infoRow('Duration', formatTime(video.duration));
+    }
+    rows += infoRow('Playback Rate', state.speed + 'x');
+    rows += infoRow('Volume', Math.round(state.volume * 100) + '%');
+    if (video.videoWidth) {
+      rows += infoRow('Video Codec', getCodecInfo());
+    }
+  } else {
+    rows = '<div style="padding:20px 16px;text-align:center;color:var(--gray-secondary);">No media loaded</div>';
+  }
+  body.innerHTML = rows;
+  panel.classList.add('open');
+}
+
+function infoRow(label, value) {
+  return `<div class="info-row"><span class="info-label">${label}</span><span class="info-value">${value}</span></div>`;
+}
+
+function getCodecInfo() {
+  const track = state.currentIndex >= 0 ? state.playlist[state.currentIndex] : null;
+  const fileName = track ? track.file.name.toLowerCase() : '';
+  if (fileName.endsWith('.mp4') || fileName.endsWith('.m4v')) return 'H.264 / AAC (estimated)';
+  if (fileName.endsWith('.webm')) return 'VP8/VP9 / Opus (estimated)';
+  if (fileName.endsWith('.ogg') || fileName.endsWith('.ogv')) return 'Theora / Vorbis (estimated)';
+  if (fileName.endsWith('.mkv')) return 'H.264/H.265 / AAC (estimated)';
+  if (fileName.endsWith('.avi')) return 'AVI container (estimated)';
+  if (fileName.endsWith('.mov')) return 'H.264 / AAC (estimated)';
+  return 'Unknown';
+}
+
+// ============================================
+// DRAG & DROP
+// ============================================
+function setupDragDrop() {
+  const viewport = document.getElementById('viewport');
+  const overlay = document.getElementById('drag-overlay');
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    viewport.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.classList.add('active');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    viewport.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.classList.remove('active');
+    });
+  });
+
+  viewport.addEventListener('drop', (e) => {
+    const files = Array.from(e.dataTransfer.files).filter(f =>
+      f.type.startsWith('video') || f.type.startsWith('audio')
+    );
+    if (files.length > 0) {
+      const startIdx = state.playlist.length;
+      addToPlaylist(files);
+      playTrack(startIdx);
+    }
+  });
+}
+
+// ============================================
+// CONTEXT MENU
+// ============================================
+function setupContextMenu() {
+  const viewport = document.getElementById('viewport');
+  const menu = document.getElementById('context-menu');
+
+  viewport.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    menu.classList.add('show');
+  });
+
+  document.addEventListener('click', () => {
+    menu.classList.remove('show');
+    closeSpeedPopup();
+  });
+}
+
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Don't trigger if typing in input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+    const key = e.key.toLowerCase();
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+
+    switch (true) {
+      case key === ' ':
+        e.preventDefault();
+        togglePlayPause();
+        break;
+      case key === 's' && !ctrl && !shift:
+        e.preventDefault();
+        stopPlayback();
+        break;
+      case key === 'f' && !ctrl:
+        e.preventDefault();
+        toggleFullscreen();
+        break;
+      case key === 'm' && !ctrl:
+        e.preventDefault();
+        toggleMute();
+        break;
+      case key === 'q' && !ctrl:
+        e.preventDefault();
+        break;
+      case key === 'arrowleft' && ctrl:
+        e.preventDefault();
+        seekRelative(-30);
+        break;
+      case key === 'arrowright' && ctrl:
+        e.preventDefault();
+        seekRelative(30);
+        break;
+      case key === 'arrowleft' && !ctrl:
+        e.preventDefault();
+        seekRelative(-5);
+        break;
+      case key === 'arrowright' && !ctrl:
+        e.preventDefault();
+        seekRelative(5);
+        break;
+      case key === 'arrowup':
+        e.preventDefault();
+        adjustVolume(0.05);
+        break;
+      case key === 'arrowdown':
+        e.preventDefault();
+        adjustVolume(-0.05);
+        break;
+      case key === '+' || key === '=':
+        if (!ctrl) { e.preventDefault(); cycleSpeed(1); }
+        break;
+      case key === '-':
+        if (!ctrl) { e.preventDefault(); cycleSpeed(-1); }
+        break;
+      case key === 'n' && !ctrl:
+        e.preventDefault();
+        playNext();
+        break;
+      case key === 'p' && !ctrl:
+        e.preventDefault();
+        playPrev();
+        break;
+      case key === 'l' && ctrl:
+        e.preventDefault();
+        togglePlaylist();
+        break;
+      case key === 'l' && !ctrl:
+        e.preventDefault();
+        cycleLoop();
+        break;
+      case key === 'e' && !ctrl:
+        e.preventDefault();
+        toggleEqualizer();
+        break;
+      case key === 'w' && !ctrl:
+        e.preventDefault();
+        toggleWatchPanel();
+        break;
+      case key === 'r' && !ctrl:
+        e.preventDefault();
+        toggleRecord();
+        break;
+      case key === 's' && shift:
+        e.preventDefault();
+        takeScreenshot();
+        break;
+      case key === 'o' && ctrl:
+        e.preventDefault();
+        openFile();
+        break;
+      case key === 'i' && ctrl:
+        e.preventDefault();
+        toggleInfoPanel();
+        break;
+      case key === 'v' && !ctrl:
+        e.preventDefault();
+        toggleSubtitles();
+        break;
+      case key === 'a' && !ctrl:
+        e.preventDefault();
+        toggleABRepeat();
+        break;
+      case key === '?' || (key === '/' && shift):
+        e.preventDefault();
+        toggleShortcutsModal();
+        break;
+      case key === 'b' && !ctrl:
+        e.preventDefault();
+        toggleAudioTrackPopup();
+        break;
+      case key === 'escape':
+        closeAllPanels();
+        break;
+    }
+  });
+}
+
+// ============================================
+// PANELS & MENUS
+// ============================================
+function togglePlaylist() {
+  closeAllMenus();
+  const panel = document.getElementById('playlist-panel');
+  panel.classList.toggle('open');
+  document.getElementById('nav-playlist-btn').classList.toggle('active', panel.classList.contains('open'));
+}
+
+function toggleShortcutsModal() {
+  closeAllMenus();
+  document.getElementById('shortcuts-modal').classList.toggle('open');
+}
+
+function closeAllMenus() {
+  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+  document.getElementById('context-menu').classList.remove('show');
+  closeSpeedPopup();
+  closeAudioTrackPopup();
+}
+
+function closeAllPanels() {
+  closeAllMenus();
+  document.getElementById('eq-panel').classList.remove('open');
+  document.getElementById('filters-panel').classList.remove('open');
+  document.getElementById('info-panel').classList.remove('open');
+  document.getElementById('shortcuts-modal').classList.remove('open');
+  document.getElementById('nav-eq-btn').classList.remove('active');
+}
+
+function closeApp() {
+  showToast('This is a web application — close the browser tab to quit.');
+}
+
+// ============================================
+// OSD (On-Screen Display)
+// ============================================
+let osdTimer = null;
+function showOSD(icon, text) {
+  const osd = document.getElementById('osd');
+  const iconEl = document.getElementById('osd-icon');
+  const textEl = document.getElementById('osd-text');
+
+  const icons = {
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>',
+    stop: '<svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>',
+    forward: '<svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>',
+    backward: '<svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>',
+    volume: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>',
+    mute: '<svg viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>',
+    speed: '<svg viewBox="0 0 24 24"><path d="M20.38 8.57l-1.23 1.85a8 8 0 01-.22 7.58H5.07A8 8 0 0115.58 6.85l1.85-1.23A10 10 0 003.35 19a2 2 0 001.72 1h13.85a2 2 0 001.74-1 10 10 0 00-.27-10.44zm-9.79 6.84a2 2 0 002.83 0l5.66-8.49-8.49 5.66a2 2 0 000 2.83z"/></svg>',
+    loop: '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>',
+    shuffle: '<svg viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>',
+    record: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
+    ab: '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>',
+    aspect: '<svg viewBox="0 0 24 24"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>',
+    subtitle: '<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z"/></svg>',
+  };
+
+  iconEl.innerHTML = icons[icon] || icons.play;
+  textEl.textContent = text;
+  osd.classList.add('show');
+
+  clearTimeout(osdTimer);
+  osdTimer = setTimeout(() => osd.classList.remove('show'), 1200);
+}
+
+// ============================================
+// TOAST
+// ============================================
+let toastTimer = null;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+function formatTime(seconds) {
+  if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+  return (bytes / 1073741824).toFixed(2) + ' GB';
+}
+
+// Scroll wheel on viewport for volume
+document.getElementById('viewport').addEventListener('wheel', (e) => {
+  e.preventDefault();
+  adjustVolume(e.deltaY < 0 ? 0.05 : -0.05);
+}, { passive: false });
+
+// ============================================
+// WATCH TOGETHER (PeerJS)
+// ============================================
+const watchState = {
+  peer: null,
+  connections: [],
+  isHost: false,
+  roomId: null,
+  username: '',
+  status: 'disconnected',
+  syncInProgress: false,
+  colors: ['#ff453a', '#ff9f0a', '#ffd60a', '#30d158', '#64d2ff', '#0a84ff', '#bf5af2', '#ff375f'],
+  remotePeers: [],
+  reconnectAttempts: 0,
+  maxReconnectAttempts: 5
+};
+
+// Sync throttle timers
+let seekSyncTimer = null;
+let voiceCallTimer = null;
+const SYNC_GUARD_MS = 800;
+
+function getPeerColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return watchState.colors[Math.abs(hash) % watchState.colors.length];
+}
+
+function loadUsername() {
+  const saved = localStorage.getItem('vlc-watch-username');
+  if (saved) watchState.username = saved;
+  return saved;
+}
+
+function promptUsername(callback) {
+  if (loadUsername()) {
+    if (callback) callback();
+    return;
+  }
+  document.getElementById('username-overlay').classList.add('show');
+  document.getElementById('username-modal').classList.add('show');
+  document.getElementById('username-input').focus();
+  watchState.usernameCallback = callback;
+}
+
+function closeUsernameModal() {
+  document.getElementById('username-overlay').classList.remove('show');
+  document.getElementById('username-modal').classList.remove('show');
+}
+
+function saveUsernameFromModal() {
+  const input = document.getElementById('username-input').value.trim();
+  if (input) {
+    watchState.username = input;
+    localStorage.setItem('vlc-watch-username', input);
+    closeUsernameModal();
+    if (watchState.usernameCallback) {
+      watchState.usernameCallback();
+      watchState.usernameCallback = null;
+    }
+  }
+}
+
+function toggleWatchPanel() {
+  const panel = document.getElementById('watch-panel');
+  const app = document.getElementById('app');
+  if (!panel.classList.contains('open')) {
+    closeAllPanels();
+    promptUsername(() => {
+      panel.classList.add('open');
+      document.getElementById('nav-watch-btn').classList.add('active');
+      app.classList.add('watch-panel-open');
+    });
+  } else {
+    panel.classList.remove('open');
+    document.getElementById('nav-watch-btn').classList.remove('active');
+    app.classList.remove('watch-panel-open');
+  }
+}
+
+function updateWatchStatus(status) {
+  watchState.status = status;
+  const dot = document.getElementById('watch-status-dot');
+  const text = document.getElementById('watch-status-text');
+  dot.className = 'watch-status-dot';
+  if (status === 'connected') {
+    dot.classList.add('connected');
+    text.textContent = watchState.isHost ? 'Hosting' : 'Connected';
+    document.getElementById('watch-create-section').style.display = 'none';
+    document.getElementById('watch-active-section').style.display = 'flex';
+    document.getElementById('watch-chat-input').disabled = false;
+    document.getElementById('watch-chat-send').disabled = false;
+    document.querySelectorAll('.emoji-btn').forEach(b => b.disabled = false);
+  } else if (status === 'connecting') {
+    dot.classList.add('connecting');
+    text.textContent = 'Connecting...';
+  } else {
+    text.textContent = 'Disconnected';
+    document.getElementById('watch-create-section').style.display = 'flex';
+    document.getElementById('watch-active-section').style.display = 'none';
+    document.getElementById('watch-chat-input').disabled = true;
+    document.getElementById('watch-chat-send').disabled = true;
+    document.querySelectorAll('.emoji-btn').forEach(b => b.disabled = true);
+    updatePeerList();
+  }
+}
+
+function createWatchRoom() {
+  promptUsername(() => {
+    if (watchState.peer) disconnectWatch();
+    updateWatchStatus('connecting');
+    const shortCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const fullId = 'vlc-watch-' + shortCode;
+    
+    if (typeof Peer === 'undefined') {
+      showToast('PeerJS not loaded. Check internet connection.');
+      updateWatchStatus('disconnected');
+      return;
+    }
+    
+    watchState.peer = new Peer(fullId);
+    watchState.isHost = true;
+    watchState.roomId = shortCode;
+    
+    watchState.peer.on('open', (id) => {
+      updateWatchStatus('connected');
+      document.getElementById('watch-room-code-display').textContent = shortCode;
+      addSystemMessage('Room created. Share the code with others to join.');
+      updatePeerList(); 
+    });
+    watchState.peer.on('connection', handleNewConnection);
+    
+    watchState.peer.on('disconnected', () => {
+      if (watchState.roomId && watchState.reconnectAttempts < watchState.maxReconnectAttempts) {
+        watchState.reconnectAttempts++;
+        updateWatchStatus('connecting');
+        addSystemMessage(`Connection lost. Reconnecting... (${watchState.reconnectAttempts}/${watchState.maxReconnectAttempts})`);
+        setTimeout(() => {
+          if (watchState.peer && !watchState.peer.destroyed) {
+            try { watchState.peer.reconnect(); } catch(e) { disconnectWatch(); }
+          }
+        }, 2000 * watchState.reconnectAttempts);
+      } else if (watchState.reconnectAttempts >= watchState.maxReconnectAttempts) {
+        showToast('Could not reconnect. Please rejoin.');
+        disconnectWatch();
+      }
+    });
+    
+    watchState.peer.on('error', (err) => {
+      if (err.type === 'peer-unavailable') {
+        showToast('Room not found. Check the code and try again.');
+        disconnectWatch();
+      } else if (err.type === 'disconnected') {
+        // Let the 'disconnected' handler deal with reconnection
+      } else {
+        showToast('Connection error: ' + err.type);
+        if (watchState.reconnectAttempts < watchState.maxReconnectAttempts) {
+          // Don't disconnect immediately — let reconnection try
+          updateWatchStatus('connecting');
+        } else {
+          disconnectWatch();
+        }
+      }
+    });
+  });
+}
+
+function promptJoinRoom() {
+  const panel = document.getElementById('watch-panel');
+  if (!panel.classList.contains('open')) {
+    toggleWatchPanel();
+  }
+  setTimeout(() => {
+    document.getElementById('watch-join-input').focus();
+  }, 300);
+}
+
+function joinWatchRoom() {
+  let code = document.getElementById('watch-join-input').value.trim().toUpperCase();
+  if (!code) return;
+  promptUsername(() => {
+    if (watchState.peer) disconnectWatch();
+    updateWatchStatus('connecting');
+    if (typeof Peer === 'undefined') {
+      showToast('PeerJS not loaded. Check internet connection.');
+      updateWatchStatus('disconnected');
+      return;
+    }
+    
+    watchState.peer = new Peer();
+    watchState.isHost = false;
+    watchState.roomId = code;
+    
+    watchState.peer.on('open', (id) => {
+      const fullId = 'vlc-watch-' + code;
+      const conn = watchState.peer.connect(fullId, {
+        metadata: { username: watchState.username }
+      });
+      
+      conn.on('open', () => {
+        watchState.connections.push(conn);
+        setupConnection(conn);
+        updateWatchStatus('connected');
+        document.getElementById('watch-room-code-display').textContent = code;
+        addSystemMessage('Connected to room ' + code);
+        updatePeerList();
+      });
+      
+      conn.on('error', (err) => {
+        showToast('Connection to host failed: ' + err.message);
+      });
+    });
+    watchState.peer.on('disconnected', () => {
+      if (watchState.roomId && watchState.reconnectAttempts < watchState.maxReconnectAttempts) {
+        watchState.reconnectAttempts++;
+        updateWatchStatus('connecting');
+        addSystemMessage(`Connection lost. Reconnecting... (${watchState.reconnectAttempts}/${watchState.maxReconnectAttempts})`);
+        setTimeout(() => {
+          if (watchState.peer && !watchState.peer.destroyed) {
+            try { watchState.peer.reconnect(); } catch(e) { disconnectWatch(); }
+          }
+        }, 2000 * watchState.reconnectAttempts);
+      } else if (watchState.reconnectAttempts >= watchState.maxReconnectAttempts) {
+        showToast('Could not reconnect. Please rejoin.');
+        disconnectWatch();
+      }
+    });
+    
+    watchState.peer.on('error', (err) => {
+      if (err.type === 'peer-unavailable') {
+        showToast('Room not found. Check the code and try again.');
+        disconnectWatch();
+      } else if (err.type === 'disconnected') {
+        // Let the 'disconnected' handler deal with reconnection
+      } else {
+        showToast('Connection error: ' + err.type);
+        if (watchState.reconnectAttempts < watchState.maxReconnectAttempts) {
+          updateWatchStatus('connecting');
+        } else {
+          disconnectWatch();
+        }
+      }
+    });
+  });
+}
+
+function disconnectWatch() {
+  clearTimeout(seekSyncTimer);
+  watchState.connections.forEach(c => { try { c.close(); } catch(e) {} });
+  watchState.connections = [];
+  if (watchState.peer) {
+    try { watchState.peer.destroy(); } catch(e) {}
+    watchState.peer = null;
+  }
+  watchState.isHost = false;
+  watchState.roomId = null;
+  watchState.reconnectAttempts = 0;
+  updateWatchStatus('disconnected');
+  document.getElementById('watch-room-code-display').textContent = '------';
+  addSystemMessage('Disconnected from room.');
+}
+
+// ============================================
+// VOICE CHAT (WebRTC)
+// ============================================
+
+
+
+
+
+
+
+
+function copyRoomCode() {
+  if (watchState.roomId) {
+    navigator.clipboard.writeText(watchState.roomId);
+    showToast('Room code copied to clipboard');
+  }
+}
+
+function handleNewConnection(conn) {
+  conn.on('open', () => {
+    // Prevent duplicate connections from the same peer
+    const existing = watchState.connections.find(c => c.peer === conn.peer && c !== conn);
+    if (existing) {
+      try { existing.close(); } catch(e) {}
+      watchState.connections = watchState.connections.filter(c => c !== existing);
+    }
+    
+    watchState.connections.push(conn);
+    setupConnection(conn);
+    watchState.reconnectAttempts = 0; // Reset on successful connection
+    
+    const peerName = conn.metadata?.username || 'Anonymous';
+    addSystemMessage(`${peerName} joined the room.`);
+    
+    if (watchState.isHost) {
+      setTimeout(() => {
+        if (conn.open) {
+          conn.send({
+            type: 'sync',
+            action: video.paused ? 'pause' : 'play',
+            time: video.currentTime,
+            speed: video.playbackRate
+          });
+          broadcastSync({ type: 'peers', peers: getPeerList() });
+        }
+      }, 500);
+    }
+    updatePeerList();
+  });
+}
+
+function handleConnectionClosed(conn) {
+  if (!watchState.connections.includes(conn)) return;
+  
+  const peerName = conn.metadata?.username || 'Anonymous';
+  watchState.connections = watchState.connections.filter(c => c !== conn);
+  addSystemMessage(`${peerName} left the room.`);
+  
+  // Check if we're now alone in the room
+  const remainingPeers = watchState.connections.length;
+  if (watchState.status === 'connected' && remainingPeers === 0) {
+    // All friends left — pause video and show overlay
+    video.pause();
+    showFriendDisconnectOverlay(peerName);
+  }
+  
+  if (watchState.isHost) {
+    broadcastSync({ type: 'peers', peers: getPeerList() });
+  }
+  updatePeerList();
+}
+
+function setupConnection(conn) {
+  let lastPong = Date.now();
+  
+  // Keepalive heartbeat to prevent idle disconnection and detect ghost drops (app closed directly)
+  const heartbeat = setInterval(() => {
+    if (!conn.open) {
+      clearInterval(heartbeat);
+      handleConnectionClosed(conn);
+      return;
+    }
+    
+    // If we haven't received a pong in 8 seconds, the connection is dead
+    if (Date.now() - lastPong > 8000) {
+      console.warn('Ping timeout for peer:', conn.peer);
+      try { conn.close(); } catch(e) {}
+      clearInterval(heartbeat);
+      handleConnectionClosed(conn);
+      return;
+    }
+    
+    try { conn.send({ type: 'ping' }); } catch(e) {}
+  }, 3000); // Send a ping every 3 seconds
+  
+  conn.on('data', (data) => {
+    if (data.type === 'ping') { try { conn.send({ type: 'pong' }); } catch(e) {} return; }
+    if (data.type === 'pong') { lastPong = Date.now(); return; }
+    if (data.type === 'sync') handleSyncMessage(data, conn);
+    else if (data.type === 'chat') receiveChatMessage(data);
+    else if (data.type === 'peers' && !watchState.isHost) {
+      watchState.remotePeers = data.peers;
+      updatePeerList();
+    }
+  });
+  
+  conn.on('close', () => {
+    clearInterval(heartbeat);
+    handleConnectionClosed(conn);
+  });
+  
+  conn.on('error', (err) => {
+    console.warn('Connection error with peer:', conn.peer, err);
+    clearInterval(heartbeat);
+    handleConnectionClosed(conn);
+  });
+}
+
+function getPeerList() {
+  const peersObj = watchState.connections.map(c => ({
+    name: c.metadata?.username || 'Anonymous',
+    id: c.peer
+  }));
+  peersObj.push({ name: watchState.username, id: watchState.peer.id });
+  return peersObj;
+}
+
+function updatePeerList() {
+  const container = document.getElementById('watch-peers-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (watchState.status !== 'connected') return;
+  
+  let peersObj = [];
+  if (watchState.isHost) {
+    peersObj = getPeerList();
+  } else {
+    peersObj = watchState.remotePeers || [
+      { name: watchState.username, id: watchState.peer?.id },
+      { name: 'Host', id: 'vlc-watch-' + watchState.roomId }
+    ];
+  }
+  
+  const uniqueNames = new Set();
+  const uiPeers = [];
+  peersObj.forEach(p => {
+    if (p && p.name && !uniqueNames.has(p.name)) {
+      uniqueNames.add(p.name);
+      uiPeers.push(p);
+    }
+  });
+  
+  uiPeers.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'peer-avatar';
+    el.title = p.name;
+    el.style.backgroundColor = getPeerColor(p.name);
+    el.textContent = p.name.substring(0, 2).toUpperCase();
+    container.appendChild(el);
+  });
+  
+  updateWatchIndicators();
+}
+
+// Friend disconnect overlay
+function showFriendDisconnectOverlay(friendName) {
+  const overlay = document.getElementById('friend-disconnect-overlay');
+  const nameEl = document.getElementById('disconnect-friend-name');
+  if (nameEl) nameEl.textContent = friendName || 'Your friend';
+  if (overlay) overlay.classList.add('show');
+}
+
+function hideFriendDisconnectOverlay() {
+  const overlay = document.getElementById('friend-disconnect-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+function continueWatchingAlone() {
+  hideFriendDisconnectOverlay();
+  video.play().catch(() => {});
+  showToast('Continuing solo — your friend can rejoin anytime');
+}
+
+function waitForFriend() {
+  hideFriendDisconnectOverlay();
+  showToast('Waiting for your friend to rejoin...');
+}
+
+// Also hide overlay when a new peer joins
+const originalHandleNewConnection = handleNewConnection;
+handleNewConnection = function(conn) {
+  conn.on('open', () => {
+    hideFriendDisconnectOverlay();
+  });
+  originalHandleNewConnection(conn);
+};
+
+function updateWatchIndicators() {
+  // No-op — replaced by disconnect overlay and auto-open chat
+}
+
+function broadcastSync(data) {
+  if (watchState.connections.length === 0) return;
+  watchState.connections.forEach(conn => {
+    if (conn.open) conn.send(data);
+  });
+}
+
+function handleSyncMessage(data, sourceConn) {
+  watchState.syncInProgress = true;
+  
+  try {
+    if (data.action === 'play') {
+      if (data.time !== undefined && Math.abs(video.currentTime - data.time) > 1) {
+        video.currentTime = data.time;
+      }
+      video.play().catch(e => console.log('Autoplay prevented', e));
+    } else if (data.action === 'pause') {
+      if (data.time !== undefined && Math.abs(video.currentTime - data.time) > 0.5) {
+        video.currentTime = data.time;
+      }
+      video.pause();
+    } else if (data.action === 'seek') {
+      // Only seek if the difference is significant to prevent loops
+      if (Math.abs(video.currentTime - data.time) > 0.5) {
+        video.currentTime = data.time;
+      }
+    } else if (data.action === 'speed') {
+      setSpeed(data.speed);
+    } else if (data.action === 'stop') {
+      stopPlayback();
+    }
+  } finally {
+    setTimeout(() => { watchState.syncInProgress = false; }, SYNC_GUARD_MS);
+  }
+  
+  // Host relays sync to other peers (not back to sender)
+  if (watchState.isHost && sourceConn) {
+    watchState.connections.forEach(conn => {
+      if (conn.open && conn !== sourceConn) {
+         conn.send(data); 
+      }
+    });
+  }
+}
+
+function sendChatMessage(e) {
+  e.preventDefault();
+  const input = document.getElementById('watch-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  const msg = { type: 'chat', username: watchState.username, text: text };
+  broadcastSync(msg);
+  receiveChatMessage(msg, true);
+  input.value = '';
+}
+
+function receiveChatMessage(data, isSelf = false) {
+  const container = document.getElementById('watch-chat-messages');
+  if (!container) return;
+  const bubble = document.createElement('div');
+  bubble.className = `watch-chat-bubble ${isSelf ? 'self' : 'other'}`;
+  
+  if (!isSelf) {
+    const sender = document.createElement('span');
+    sender.className = 'sender';
+    sender.textContent = data.username;
+    bubble.appendChild(sender);
+  }
+  
+  const content = document.createElement('div');
+  content.textContent = data.text;
+  bubble.appendChild(content);
+  
+  container.appendChild(bubble);
+  container.scrollTop = container.scrollHeight;
+  
+  // Auto-open watch panel when a message arrives from another user
+  if (!isSelf) {
+    const panel = document.getElementById('watch-panel');
+    const app = document.getElementById('app');
+    if (panel && !panel.classList.contains('open')) {
+      panel.classList.add('open');
+      document.getElementById('nav-watch-btn').classList.add('active');
+      app.classList.add('watch-panel-open');
+    }
+  }
+}
+
+function insertEmoji(emoji) {
+  const input = document.getElementById('watch-chat-input');
+  if (input.disabled) return;
+  input.value += emoji;
+  input.focus();
+}
+
+function addSystemMessage(text) {
+  const container = document.getElementById('watch-chat-messages');
+  if (!container) return;
+  const bubble = document.createElement('div');
+  bubble.className = 'watch-chat-bubble system';
+  bubble.textContent = text;
+  container.appendChild(bubble);
+  container.scrollTop = container.scrollHeight;
+}
+
+const originalTogglePlayPause = togglePlayPause;
+togglePlayPause = function() {
+  originalTogglePlayPause();
+  if (watchState.status === 'connected' && !watchState.syncInProgress) {
+    broadcastSync({
+      type: 'sync',
+      action: video.paused ? 'pause' : 'play',
+      time: video.currentTime
+    });
+  }
+};
+
+const originalStopPlayback = stopPlayback;
+stopPlayback = function() {
+  originalStopPlayback();
+  if (watchState.status === 'connected' && !watchState.syncInProgress) {
+    broadcastSync({ type: 'sync', action: 'stop' });
+  }
+};
+
+const originalSetSpeed = setSpeed;
+setSpeed = function(rate) {
+  originalSetSpeed(rate);
+  if (watchState.status === 'connected' && !watchState.syncInProgress) {
+    broadcastSync({ type: 'sync', action: 'speed', speed: rate });
+  }
+};
+
+// Sync seek via the 'seeked' event — debounced to prevent feedback loops
+video.addEventListener('seeked', () => {
+  if (watchState.status === 'connected' && !watchState.syncInProgress) {
+    clearTimeout(seekSyncTimer);
+    seekSyncTimer = setTimeout(() => {
+      if (!watchState.syncInProgress) {
+        broadcastSync({ type: 'sync', action: 'seek', time: video.currentTime });
+      }
+    }, 300);
+  }
+});
+
+const originalCloseAllPanels = closeAllPanels;
+closeAllPanels = function() {
+  originalCloseAllPanels();
+  const watchPanel = document.getElementById('watch-panel');
+  if (watchPanel) watchPanel.classList.remove('open');
+  const watchBtn = document.getElementById('nav-watch-btn');
+  if (watchBtn) watchBtn.classList.remove('active');
+  const app = document.getElementById('app');
+  if (app) app.classList.remove('watch-panel-open');
+};
+
+// Init
+init();
+</script>
+</body>
+</html>
